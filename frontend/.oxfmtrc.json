@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "singleQuote": true,
+  "htmlWhitespaceSensitivity": "css",
+  "trailingComma": "es5",
+  "sortTailwindcss": {},
+  "sortPackageJson": false,
+  "ignorePatterns": ["*.md", "*.toml", "*.json", "*.yml", "*.yaml", ".env*", "worker-configuration.d.ts"],
+  "tabWidth": 2,
+  "printWidth": 120
+}
