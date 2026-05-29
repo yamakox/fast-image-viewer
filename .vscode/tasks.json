@@ -1,0 +1,69 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "T001: backendのセットアップ",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "command": "uv sync"
+    },
+    {
+      "label": "T002: frontendのセットアップ",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "command": "npm i"
+    },
+    {
+      "label": "T011: DBのセットアップ・マイグレーション",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "command": "uv run manage.py makemigrations && uv run manage.py migrate"
+    },
+    {
+      "label": "T012: デバッグモードでbackend起動",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "command": "uv run -m debugpy --listen localhost:8001 -m uvicorn --host=localhost --port=8000 fast_image_viewer.asgi:application --reload"
+    },
+    {
+      "label": "T013: frontend起動 (npm run dev)",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "command": "npm run dev"
+    },
+    {
+      "label": "T021: ソースコードのチェック",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "echo '***** Frontend check *****' && cd frontend && npx oxlint && cd ../backend && echo '***** Backend check *****' && uv run ruff check"
+    },
+    {
+      "label": "T022: ソースコードの書式整形",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "cd frontend && npm run format && cd ../backend && uv run ruff format"
+    },
+    {
+      "label": "T023: Vueアプリのビルド",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "command": "npm run build"
+    }
+  ]
+}
