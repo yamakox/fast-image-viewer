@@ -23,3 +23,9 @@ cd frontend
 npm i -D @tsconfig/node24 oxfmt oxlint
 npm i tailwindcss @tailwindcss/vite
 ```
+
+サイドバー用に[*Flowbite*をインストール](https://flowbite.com/docs/getting-started/vue/)する。
+
+```bash
+npm i flowbite
+```
