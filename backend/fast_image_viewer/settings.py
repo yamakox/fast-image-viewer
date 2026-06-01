@@ -134,3 +134,13 @@ CORS_ALLOWED_ORIGINS = [
 # プリフライト(事前リクエスト)の設定 (デフォルトは86400秒==1日)
 # 30分だけ許可
 # CORS_PREFLIGHT_MAX_AGE = 60 * 30
+
+# Django REST frameworkの設定 (https://www.django-rest-framework.org/)
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
+    ]
+}
