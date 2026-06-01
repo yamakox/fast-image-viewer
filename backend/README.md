@@ -31,3 +31,11 @@ uv run manage.py runserver
 ```bash
 uv add django-cors-headers
 ```
+
+### Django REST frameworkを追加
+
+以下の[パッケージ](https://www.django-rest-framework.org/)を追加して、`fast_image_viewer/settings.py`に設定を追加する。
+
+```bash
+uv add djangorestframework markdown django-filter
+```
