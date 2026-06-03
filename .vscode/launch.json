@@ -17,6 +17,15 @@
       "request": "launch",
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}/frontend"
+    },
+    {
+      "name": "Start dataset scan",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "manage.py",
+      "args": ["scan_dataset"],
+      "cwd": "${workspaceFolder}/backend",
+      "justMyCode": true
     }
   ]
 }

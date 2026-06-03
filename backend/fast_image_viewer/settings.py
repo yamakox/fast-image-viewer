@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import env
+
+APPDATA_FOLDER_PATH = Path(env.FIV_APPDATA_FOLDER_PATH)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,10 +82,9 @@ WSGI_APPLICATION = 'fast_image_viewer.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': APPDATA_FOLDER_PATH / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -144,3 +146,9 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
     ]
 }
+
+
+# `api`の設定
+
+# サムネイル画像の保存ファイル名(HDF5形式)
+API_THUMBNAIL_FILENAME = 'thumbnail.hdf5'
