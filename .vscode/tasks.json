@@ -34,6 +34,14 @@
       "command": "uv run manage.py scan_dataset"
     },
     {
+      "label": "T013: Django shellの起動",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "command": "uv run manage.py shell"
+    },
+    {
       "label": "T021: デバッグモードでbackend起動",
       "type": "shell",
       "options": {
