@@ -1,7 +1,8 @@
 from django.db import models
 
 class Folder(models.Model):
-    path = models.TextField()
+    name = models.TextField()
+    pathname = models.TextField()
     parent = models.ForeignKey(
         'self', 
         on_delete=models.CASCADE, 
@@ -20,4 +21,8 @@ class Image(models.Model):
         related_name='images'
     )
     hash = models.CharField(max_length=16)
-    timestamp = models.DateTimeField('timestamp')
+    timestamp = models.DateTimeField()
+    favorite = models.DateTimeField(
+        blank=True,
+        null=True,
+    )

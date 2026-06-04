@@ -69,3 +69,9 @@ uv run manage.py migrate
 ```bash
 uv run manage.py scan_dataset
 ```
+
+### REST APIを作成
+
+`fast_image_viewer/settings.py`に[`django-filter`](https://www.django-rest-framework.org/api-guide/filtering/#djangofilterbackend)の設定を追加する。([Django REST frameworkを追加](#django-rest-frameworkを追加)したときの設定忘れ)
+
+[Django REST frameworkを使って](https://www.django-rest-framework.org/tutorial/quickstart/)SerializersとViewSetsを実装して、routerにViewSetsを登録する。

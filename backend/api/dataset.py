@@ -91,12 +91,13 @@ def _scan_dataset_folder(hdf5file: Hdf5File, parent_path: Path, root_path: Path,
     for i in parent_path.glob('*'):
         if i.is_dir():
             try:
-                path = str(i.relative_to(root_path))
-                q = models.Folder.objects.filter(path=path)
+                pathname = str(i.relative_to(root_path))
+                q = models.Folder.objects.filter(pathname=pathname)
                 folder = q.first()
                 if not folder:
                     folder = models.Folder(
-                        path=path, 
+                        name=i.name,
+                        pathname=pathname, 
                         parent=parent
                     )
                     folder.save()
@@ -127,7 +128,7 @@ def _cleanup_database(root_path: Path, parent: models.Folder|None) -> None:
     # (HDF5のデータセットはdelしてもファイルサイズが減らないためDBのみクリーンアップする)
     q = models.Image.objects.filter(parent=parent)
     if parent:
-        parent_path = root_path / parent.path
+        parent_path = root_path / parent.pathname
     else:
         parent_path = root_path
     for i in q:

@@ -1,0 +1,32 @@
+GET http://localhost:8000/api/v1/folders?rootonly=yes HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/folders?parent=1 HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/folders?parent=0 HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/images HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/images?parent=2 HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/images?parent=0 HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/images/1 HTTP/1.1
+Accept: application/json
+
+###
+GET http://localhost:8000/api/v1/images/1 HTTP/1.1
+Accept: image/*
+
+###
