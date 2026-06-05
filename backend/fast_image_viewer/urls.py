@@ -16,9 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api-auth/", include("rest_framework.urls", namespace='rest_framework')),
     path('api/v1/', include('api.urls'))
 ]
+
+# https://docs.djangoproject.com/ja/6.0/ref/contrib/staticfiles/#static-file-development-view
+# settings.DEBUGがTrueの場合、STATIC_URL用のURLパターンが追加される
+urlpatterns += staticfiles_urlpatterns()

@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-_)@dye+3$%(tkinqn408!_9((q2qns)-c*y4j=+27+#77xzzqd'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.DEBUG
 
 ALLOWED_HOSTS = []
 
@@ -122,6 +122,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# https://docs.djangoproject.com/ja/6.0/howto/static-files/#deployment
+STATIC_ROOT = env.STATIC_ROOT
 
 
 # CORSの設定 (https://pypi.org/project/django-cors-headers/)

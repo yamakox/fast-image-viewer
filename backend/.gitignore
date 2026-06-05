@@ -1,4 +1,9 @@
+# 開発用ストレージフォルダー
 storage/
+
+# 静的ファイル用フォルダー: uv run collectstaticでstaticファイルを集める
+# https://docs.djangoproject.com/ja/6.0/howto/static-files/#deployment
+/static/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

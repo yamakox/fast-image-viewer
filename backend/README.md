@@ -75,3 +75,30 @@ uv run manage.py scan_dataset
 `fast_image_viewer/settings.py`に[`django-filter`](https://www.django-rest-framework.org/api-guide/filtering/#djangofilterbackend)の設定を追加する。([Django REST frameworkを追加](#django-rest-frameworkを追加)したときの設定忘れ)
 
 [Django REST frameworkを使って](https://www.django-rest-framework.org/tutorial/quickstart/)SerializersとViewSetsを実装して、routerにViewSetsを登録する。
+
+### 静的ファイル(staticfiles)を配置・公開する
+
+Django REST frameworkの`/api-auth`にアクセスすると、JavaScriptやCSSなどが404 Not Foundになってしまう。
+
+対処方法は、開発時とデプロイ時で異なる。詳細は、Djangoの[静的ファイルの管理ドキュメント](https://docs.djangoproject.com/ja/6.0/howto/static-files/)を参照。
+
+- 開発時の静的ファイルの公開
+  
+  [静的ファイル開発ビュー](https://docs.djangoproject.com/ja/6.0/ref/contrib/staticfiles/#django.contrib.staticfiles.views.serve)を使って、プロジェクトの`urls.py`の`urlpatterns`に`STATIC_URL`のURLパターンを追加する。
+
+```fast_image_viewer/urls.py
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+# settings.DEBUGがTrueの場合、'^static/(?P<path>.*)$'のURLパターンが追加される
+urlpatterns += staticfiles_urlpatterns()
+```
+
+- デプロイ時の静的ファイルの配置と公開
+  
+  デプロイ時は`STATIC_ROOT`で静的ファイルの保存先フォルダーを設定して、以下のコマンドを実行して静的ファイルを収集する。
+  
+  `STATIC_ROOT`は、nginxなどのWebサーバを使って`STATIC_URL`のパスで公開する。
+
+```bash
+uv run manage.py collectstatic
+```
