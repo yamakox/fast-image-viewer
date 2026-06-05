@@ -5,9 +5,11 @@
 
 # from django.db.models.query import QuerySet
 # from django.core.exceptions import BadRequest
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, pagination
+from rest_framework.response import Response
 from . import models
 from . import serializers
+import env
 
 
 class FolderViewSet(viewsets.ModelViewSet):
@@ -16,7 +18,6 @@ class FolderViewSet(viewsets.ModelViewSet):
 
     queryset = models.Folder.objects.all()
     serializer_class = serializers.FolderSerializer
-    filter_backends = [filters.OrderingFilter]
     filterset_fields = ['parent']
     ordering_fields = ['name', 'parent', ]
     ordering = ['name']
@@ -33,13 +34,26 @@ class FolderViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
 
+class ImageResultsSetPagination(pagination.PageNumberPagination):
+    page_size = env.PAGINATION_SIZE
+    page_size_query_param = 'page_size'
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'page': self.page.number,
+            'num_pages': self.page.paginator.num_pages,
+            'page_size': self.page_size,
+            'results': data,
+        })
+
 class ImageViewSet(viewsets.ModelViewSet):
     """API endpoint that allows images to be viewed or edited.
     """
 
     queryset = models.Image.objects.all()
     serializer_class = serializers.ImageSerializer
-    filter_backends = [filters.OrderingFilter]
+    pagination_class = ImageResultsSetPagination
     filterset_fields = ['parent']
     ordering_fields = ['name', 'parent', 'timestamp', 'favorite']
     ordering = ['-timestamp']

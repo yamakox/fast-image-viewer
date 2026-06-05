@@ -6,6 +6,7 @@ load_dotenv()
 # Django settings.py
 DEBUG = eval(os.environ.get('DEBUG', 'False'))
 STATIC_ROOT = os.environ.get('STATIC_ROOT', '/var/www/example.com/static/')
+PAGINATION_SIZE = eval(os.environ.get('PAGINATION_SIZE', '100'))
 
 # fast-image-viewer
 FIV_APPDATA_FOLDER_PATH = os.environ.get('FIV_APPDATA_FOLDER_PATH', '/var/opt/fast-image-viewer')

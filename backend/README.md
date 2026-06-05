@@ -1,5 +1,7 @@
 # fast-image-viewer backend
 
+[Django](https://www.djangoproject.com/)と[Django REST framework](https://www.django-rest-framework.org/)を使ってバックエンドのREST APIを実装している。
+
 ## REST API仕様
 
 `Accept`ヘッダーで取得したいコンテンツ型のMIMEタイプを指定できる。詳細は、[Django REST framework](https://www.django-rest-framework.org/)の[Content negotiation](https://www.django-rest-framework.org/api-guide/content-negotiation/)を参照。
@@ -71,34 +73,44 @@ Accept: application/json
 |favoriteonly|`yes`など|お気に入りとして登録されている画像データ一覧を取得する|
 |parent|親フォルダーのID|指定された親フォルダー配下の画像データ一覧を取得する|
 |ordering|`-favorite`, `favorite,name` など|フィールドの値で並べ替えを行う。降順(`-`で始まるフィールド名)の場合、`NULL`値は後ろ側に並ぶ。詳細は[DRFのOrderingFilter](https://www.django-rest-framework.org/api-guide/filtering/#orderingfilter)を参照。|
+|page_size|1ページに表示する件数|ページネーションにおいて、1ページあたりの表示件数を指定できる。デフォルトは`.env`の`PAGINATION_SIZE`。|
 
-`/api/v1/images?rootonly=yes&ordering=-favorite,-timestamp`の応答例:
+`/api/v1/images?rootonly=yes&ordering=-favorite,-timestamp&page_size=5`の応答例:
 
 ```json
-[
-  {
-    "id": 21,
-    "name": "20251206-DSC03670.jpeg",
-    "favorite": "2026-06-05T16:00:00+09:00"
-  },
-  {
-    "id": 11,
-    "name": "20251019-DSC02800.jpeg",
-    "favorite": "2026-06-05T16:00:00+09:00"
-  },
-  {
-    "id": 583,
-    "name": "20251219-DSC04081.jpeg",
-    "favorite": null
-  },
-  {
-    "id": 569,
-    "name": "20251219-DSC04062.jpeg",
-    "favorite": null
-  },
-
-  ...以下略...
-]
+{
+  "count": 184,
+  "page": 1,
+  "num_pages": 37,
+  "page_size": 100,
+  "results": [
+    {
+      "id": 10,
+      "name": "20251019-DSC02528.jpeg",
+      "favorite": "2026-06-05T16:00:01+09:00"
+    },
+    {
+      "id": 21,
+      "name": "20251206-DSC03670.jpeg",
+      "favorite": "2026-06-05T16:00:00+09:00"
+    },
+    {
+      "id": 11,
+      "name": "20251019-DSC02800.jpeg",
+      "favorite": "2026-06-05T16:00:00+09:00"
+    },
+    {
+      "id": 20,
+      "name": "20251219-DSC03771.jpeg",
+      "favorite": "2026-06-05T15:00:01+09:00"
+    },
+    {
+      "id": 583,
+      "name": "20251219-DSC04081.jpeg",
+      "favorite": null
+    }
+  ]
+}
 ```
 
 #### 画像データの詳細情報の取得
@@ -240,3 +252,7 @@ urlpatterns += staticfiles_urlpatterns()
 ```bash
 uv run manage.py collectstatic
 ```
+
+### ページネーションを実装
+
+`fast_image_viewer/settings.py`の`REST_FRAMEWORK`に[ページネーションの設定](https://www.django-rest-framework.org/api-guide/pagination/)を追加すると`Folder`にもページネーションの設定が加わってしまうので、[`Image`専用のページネーションクラス](https://www.django-rest-framework.org/api-guide/pagination/#custom-pagination-styles)を追加した。([参考](https://memory-lovers.blog/entry/2021/02/02/153345))
