@@ -1,5 +1,143 @@
 # fast-image-viewer backend
 
+## REST API仕様
+
+`Accept`ヘッダーで取得したいコンテンツ型のMIMEタイプを指定できる。詳細は、[Django REST framework](https://www.django-rest-framework.org/)の[Content negotiation](https://www.django-rest-framework.org/api-guide/content-negotiation/)を参照。
+
+Webブラウザ(Google ChromeとSafari)からAPIにアクセスすると、HTML形式のデータが返される。(`Accept`ヘッダーの先頭に`text/html`がいるため)
+
+### データフォルダーAPI
+
+#### データフォルダーの一覧取得
+
+```http
+GET /api/v1/folders HTTP/1.1
+Accept: application/json
+
+```
+
+|クエリーパラメータ名|値|説明|
+|---|---|---|
+|rootonly|`yes`など、1文字以上の任意の文字列|親フォルダーの無い最上位階層のフォルダー一覧を取得する|
+|parent|親フォルダーのID|指定された親フォルダー配下のフォルダー一覧を取得する|
+
+`/api/v1/folders?parent=1`の応答例:
+
+```json
+[
+  {
+    "id": 4,
+    "name": "E7系"
+  },
+  {
+    "id": 2,
+    "name": "W7系"
+  }
+]
+```
+
+#### データフォルダーの詳細情報の取得
+
+```http
+GET /api/v1/folders/<int:id> HTTP/1.1
+Accept: application/json
+
+```
+
+`/api/v1/folders/2`の応答例:
+
+```json
+{
+  "id": 2,
+  "name": "W7系",
+  "pathname": "新幹線/W7系",
+  "parent": 1
+}
+```
+
+### 画像データAPI
+
+#### 画像データの一覧取得
+
+```http
+GET /api/v1/images HTTP/1.1
+Accept: application/json
+
+```
+
+|クエリーパラメータ名|値|説明|
+|---|---|---|
+|rootonly|`yes`など|親フォルダーの無い最上位階層の画像データ一覧を取得する|
+|favoriteonly|`yes`など|お気に入りとして登録されている画像データ一覧を取得する|
+|parent|親フォルダーのID|指定された親フォルダー配下の画像データ一覧を取得する|
+|ordering|`-favorite`, `favorite,name` など|フィールドの値で並べ替えを行う。降順(`-`で始まるフィールド名)の場合、`NULL`値は後ろ側に並ぶ。詳細は[DRFのOrderingFilter](https://www.django-rest-framework.org/api-guide/filtering/#orderingfilter)を参照。|
+
+`/api/v1/images?rootonly=yes&ordering=-favorite,-timestamp`の応答例:
+
+```json
+[
+  {
+    "id": 21,
+    "name": "20251206-DSC03670.jpeg",
+    "favorite": "2026-06-05T16:00:00+09:00"
+  },
+  {
+    "id": 11,
+    "name": "20251019-DSC02800.jpeg",
+    "favorite": "2026-06-05T16:00:00+09:00"
+  },
+  {
+    "id": 583,
+    "name": "20251219-DSC04081.jpeg",
+    "favorite": null
+  },
+  {
+    "id": 569,
+    "name": "20251219-DSC04062.jpeg",
+    "favorite": null
+  },
+
+  ...以下略...
+]
+```
+
+#### 画像データの詳細情報の取得
+
+```http
+GET /api/v1/images/<int:id> HTTP/1.1
+Accept: application/json
+
+```
+
+`/api/v1/images/11`の応答例:
+
+```json
+{
+  "id": 11,
+  "name": "20251019-DSC02800.jpeg",
+  "parent": null,
+  "hash": "000000047fffffff",
+  "timestamp": "2026-06-01T11:28:14.505976+09:00",
+  "favorite": "2026-06-05T16:00:00+09:00"
+}
+```
+
+#### 画像データの取得
+
+```http
+GET /api/v1/images/<int:id> HTTP/1.1
+Accept: image/*
+
+```
+
+#### サムネイル画像データの取得
+
+```http
+GET /api/v1/images/<int:id>/thumbnail HTTP/1.1
+Accept: image/*
+
+```
+
 ## 開発メモ
 
 ### uvでプロジェクトを作成
