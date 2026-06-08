@@ -1,60 +1,85 @@
 # データフォルダーAPI
 
-GET http://localhost:8000/api/v1/folders HTTP/1.1
+GET http://localhost:8000/api/v1/folders/ HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/folders?ordering=-parent,name HTTP/1.1
+GET http://localhost:8000/api/v1/folders/?ordering=-parent,-name HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/folders?rootonly=yes HTTP/1.1
+GET http://localhost:8000/api/v1/folders/?rootonly=yes HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/folders?parent=1 HTTP/1.1
+GET http://localhost:8000/api/v1/folders/?parent=1 HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/folders?parent=0 HTTP/1.1
+GET http://localhost:8000/api/v1/folders/?parent=0 HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/folders/2 HTTP/1.1
+GET http://localhost:8000/api/v1/folders/2/ HTTP/1.1
 Accept: application/json
 
 ###
 
 # 画像データAPI
-GET http://localhost:8000/api/v1/images HTTP/1.1
+GET http://localhost:8000/api/v1/images/ HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images?rootonly=yes HTTP/1.1
+GET http://localhost:8000/api/v1/images/?rootonly=yes HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images?rootonly=yes&favoriteonly=yes HTTP/1.1
+GET http://localhost:8000/api/v1/images/?rootonly=yes&favoriteonly=yes HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images?rootonly=yes&ordering=-favorite,-timestamp&page_size=5 HTTP/1.1
+GET http://localhost:8000/api/v1/images/?rootonly=yes&ordering=-favorite,-timestamp&page_size=5 HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images?parent=2 HTTP/1.1
+GET http://localhost:8000/api/v1/images/?parent=2 HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images?parent=0 HTTP/1.1
+GET http://localhost:8000/api/v1/images/?parent=0 HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images/11 HTTP/1.1
+GET http://localhost:8000/api/v1/images/11/ HTTP/1.1
 Accept: application/json
 
 ###
-GET http://localhost:8000/api/v1/images/11 HTTP/1.1
+PATCH http://localhost:8000/api/v1/images/11/ HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+    "favorite": "2026-06-08T10:00:00+09:00"
+}
+
+###
+PATCH http://localhost:8000/api/v1/images/11/ HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+    "favorite": null
+}
+
+###
+PATCH http://localhost:8000/api/v1/images/11/ HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{}
+
+###
+GET http://localhost:8000/api/v1/images/11/ HTTP/1.1
 Accept: image/*
 
 ###

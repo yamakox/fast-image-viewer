@@ -23,6 +23,6 @@ class Image(models.Model):
     hash = models.CharField(max_length=16)
     timestamp = models.DateTimeField()
     favorite = models.DateTimeField(
-        blank=True,
+        blank=False,
         null=True,
     )

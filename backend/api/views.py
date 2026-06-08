@@ -7,6 +7,9 @@
 # from django.core.exceptions import BadRequest
 from rest_framework import viewsets, filters, pagination
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import ValidationError
+# from rest_framework.status import HTTP_204_NO_CONTENT
 from . import models
 from . import serializers
 import env
@@ -16,6 +19,7 @@ class FolderViewSet(viewsets.ModelViewSet):
     """API endpoint that allows folders to be viewed or edited.
     """
 
+    http_method_names = ['get', 'head', 'options']
     queryset = models.Folder.objects.all()
     serializer_class = serializers.FolderSerializer
     filterset_fields = ['parent']
@@ -51,12 +55,14 @@ class ImageViewSet(viewsets.ModelViewSet):
     """API endpoint that allows images to be viewed or edited.
     """
 
+    http_method_names = ['get', 'patch', 'head', 'options']
     queryset = models.Image.objects.all()
     serializer_class = serializers.ImageSerializer
     pagination_class = ImageResultsSetPagination
     filterset_fields = ['parent']
     ordering_fields = ['name', 'parent', 'timestamp', 'favorite']
     ordering = ['-timestamp']
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -70,3 +76,14 @@ class ImageViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return serializers.ImageListSerializer
         return super().get_serializer_class()
+
+    def partial_update(self, request, pk=None):
+        image = models.Image.objects.get(pk=pk)
+        serializer = serializers.ImageSerializer(image, request.data, partial=True)
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+        serializer.save()
+        return Response({
+            'id': image.id, 
+            'favorite': image.favorite,
+        })

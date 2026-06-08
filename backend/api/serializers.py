@@ -17,6 +17,9 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Image
         fields = ['id', 'name', 'parent', 'hash', 'timestamp', 'favorite']
+        extra_kwargs = {
+            'favorite': {'allow_null': True, 'required': True}
+        }
 
 
 class ImageListSerializer(ImageSerializer):
