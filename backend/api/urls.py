@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework import routers
 from . import views
 
-router = routers.DefaultRouter(trailing_slash=False)    # URL末尾の`/`は無しにする
+router = routers.DefaultRouter(trailing_slash=False)  # URL末尾の`/`は無しにする
 router.register('folders', views.FolderViewSet)
 router.register('images', views.ImageViewSet)
 

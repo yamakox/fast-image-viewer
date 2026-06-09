@@ -1,12 +1,12 @@
 # from django.http import JsonResponse
-# 
+#
 # def index(request):
 #     return JsonResponse({'value': 'Hello from Django!'})
 
 # from django.db.models.query import QuerySet
 from django.core.exceptions import BadRequest
 from django.http import HttpResponse, JsonResponse
-from rest_framework import viewsets, pagination # , renderers
+from rest_framework import viewsets, pagination  # , renderers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
@@ -22,24 +22,27 @@ from pathlib import Path
 
 root_path = Path(env.FIV_DATASET_FOLDER_PATH).resolve()
 appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
-#hdf5file = dataset.Hdf5File(appdata_path)
+# hdf5file = dataset.Hdf5File(appdata_path)
 
 
 def _make_404_response(id: int, **kwargs) -> JsonResponse:
     return JsonResponse(
-        dict(id=id, **kwargs), 
-        status=HTTP_404_NOT_FOUND
+        dict(id=id, **kwargs),
+        status=HTTP_404_NOT_FOUND,
     )
 
+
 class FolderViewSet(viewsets.ModelViewSet):
-    """API endpoint that allows folders to be viewed or edited.
-    """
+    """API endpoint that allows folders to be viewed or edited."""
 
     http_method_names = ['get', 'head', 'options']
     queryset = models.Folder.objects.all()
     serializer_class = serializers.FolderSerializer
     filterset_fields = ['parent']
-    ordering_fields = ['name', 'parent', ]
+    ordering_fields = [
+        'name',
+        'parent',
+    ]
     ordering = ['name']
 
     def get_queryset(self):
@@ -59,20 +62,22 @@ class ImageResultsSetPagination(pagination.PageNumberPagination):
     page_size_query_param = 'page_size'
 
     def get_paginated_response(self, data):
-        return Response({
-            'count': self.page.paginator.count,
-            'page': self.page.number,
-            'num_pages': self.page.paginator.num_pages,
-            'page_size': self.page_size,
-            'results': data,
-        })
+        return Response(
+            {
+                'count': self.page.paginator.count,
+                'page': self.page.number,
+                'num_pages': self.page.paginator.num_pages,
+                'page_size': self.page_size,
+                'results': data,
+            }
+        )
+
 
 class ImageViewSet(viewsets.ModelViewSet):
-    """API endpoint that allows images to be viewed or edited.
-    """
+    """API endpoint that allows images to be viewed or edited."""
 
     http_method_names = ['get', 'patch', 'head', 'options']
-    #renderer_classes = [image_renderers.JPEGRenderer, renderers.JSONRenderer, renderers.BrowsableAPIRenderer]
+    # renderer_classes = [image_renderers.JPEGRenderer, renderers.JSONRenderer, renderers.BrowsableAPIRenderer]
     queryset = models.Image.objects.all()
     serializer_class = serializers.ImageSerializer
     pagination_class = ImageResultsSetPagination
@@ -106,17 +111,31 @@ class ImageViewSet(viewsets.ModelViewSet):
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)
         serializer.save()
-        return Response({
-            'id': image.id, 
-            'favorite': image.favorite,
-        })
+        return Response(
+            {
+                'id': image.id,
+                'favorite': image.favorite,
+            }
+        )
 
-    @action(methods=['get'], detail=True, renderer_classes=[image_renderers.JPEGRenderer, ])
+    @action(
+        methods=['get'],
+        detail=True,
+        renderer_classes=[
+            image_renderers.JPEGRenderer,
+        ],
+    )
     def image(self, request, pk=None):
         logger.debug(f'image: {pk=} {request=}')
         return self.__retrieve_image(request, pk)
 
-    @action(methods=['get'], detail=True, renderer_classes=[image_renderers.JPEGRenderer, ])
+    @action(
+        methods=['get'],
+        detail=True,
+        renderer_classes=[
+            image_renderers.JPEGRenderer,
+        ],
+    )
     def thumbnail(self, request, pk=None):
         logger.debug(f'image: {pk=} {request=}')
         try:
@@ -126,10 +145,10 @@ class ImageViewSet(viewsets.ModelViewSet):
             bindata = hdf5file.get_data(pk)
         except Exception as excep:
             return JsonResponse(
-                {'id': pk, 'error': str(excep),}, 
-                status=HTTP_500_INTERNAL_SERVER_ERROR, 
+                {'id': pk, 'error': str(excep)},
+                status=HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # NOTE: Response(bindata, ...)ではブラウザに画像を送信できなかった(原因不明)
         response = HttpResponse(bindata, content_type=image_renderers.JPEGRenderer.media_type)
         response['Content-Length'] = len(bindata)
@@ -146,14 +165,14 @@ class ImageViewSet(viewsets.ModelViewSet):
             image_filepath = root_path / image.name
         if not image_filepath.exists():
             return _make_404_response(pk, file=str(image_filepath))
-        
+
         renderer = image_renderers.find_renderer(image_filepath)
         if not renderer:
             raise BadRequest('未サポートの画像形式です: ' + image_filepath.name)
-        
+
         with open(image_filepath, 'rb') as f:
             bindata = f.read()
-        
+
         # NOTE: Response(bindata, ...)ではブラウザに画像を送信できなかった(原因不明)
         response = HttpResponse(bindata, content_type=renderer.media_type)
         response['Content-Length'] = len(bindata)

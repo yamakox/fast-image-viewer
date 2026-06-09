@@ -24,7 +24,11 @@ class Hdf5File:
     def __init__(self, folder_path: Path, mode='r'):
         path = folder_path / settings.API_THUMBNAIL_FILENAME
         self.h5 = h5py.File(path, mode)
-        self.group = self.h5[API_THUMBNAIL_GROUP] if API_THUMBNAIL_GROUP in self.h5 else self.h5.create_group(API_THUMBNAIL_GROUP)
+        self.group = (
+            self.h5[API_THUMBNAIL_GROUP]
+            if API_THUMBNAIL_GROUP in self.h5
+            else self.h5.create_group(API_THUMBNAIL_GROUP)
+        )
 
     def __enter__(self):
         return self
@@ -48,7 +52,7 @@ class Hdf5File:
         if name in self.group:
             raise Exception(f'{id=} already exists in {settings.API_THUMBNAIL_FILENAME}')
         self.group.create_dataset(name, data=np.asarray(data))
-    
+
     def get_data(self, id: int) -> bytes:
         if not self.group:
             raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
@@ -56,7 +60,7 @@ class Hdf5File:
         if name not in self.group:
             raise Exception(f'{id=} not found in {settings.API_THUMBNAIL_FILENAME}')
         return np.asarray(self.group[name]).tobytes()
-    
+
     def has_data(self, id: int) -> bool:
         if not self.group:
             raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
@@ -65,7 +69,7 @@ class Hdf5File:
 
 
 # 画像ファイルのサムネイルとデータの作成
-def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder|None) -> None:
+def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder | None) -> None:
     try:
         q = models.Image.objects.filter(name=path.name, parent=parent)
         if q.first():
@@ -74,12 +78,12 @@ def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder|Non
         img = Image.open(path)
         w, h = img.size
         if w < h:
-            img = img.crop((0, (h-w)//2, w, (h+w)//2))
+            img = img.crop((0, (h - w) // 2, w, (h + w) // 2))
         else:
-            img = img.crop(((w-h)//2, 0, (w+h)//2, h))
+            img = img.crop(((w - h) // 2, 0, (w + h) // 2, h))
         img = img.resize((env.FIV_THUMBNAIL_SIZE, env.FIV_THUMBNAIL_SIZE), Image.LANCZOS)
         with io.BytesIO() as output:
-            img.save(output, format="JPEG", quality=env.FIV_THUMBNAIL_QUALITY)
+            img.save(output, format='JPEG', quality=env.FIV_THUMBNAIL_QUALITY)
             jpeg_data = output.getvalue()
         image = models.Image(
             name=path.name,
@@ -94,7 +98,7 @@ def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder|Non
 
 
 # データセット(サブ)フォルダー内のスキャン
-def _scan_dataset_folder(hdf5file: Hdf5File, parent_path: Path, root_path: Path, parent: models.Folder|None) -> None:
+def _scan_dataset_folder(hdf5file: Hdf5File, parent_path: Path, root_path: Path, parent: models.Folder | None) -> None:
     for i in parent_path.glob('*'):
         if i.is_dir():
             try:
@@ -102,11 +106,7 @@ def _scan_dataset_folder(hdf5file: Hdf5File, parent_path: Path, root_path: Path,
                 q = models.Folder.objects.filter(pathname=pathname)
                 folder = q.first()
                 if not folder:
-                    folder = models.Folder(
-                        name=i.name,
-                        pathname=pathname, 
-                        parent=parent
-                    )
+                    folder = models.Folder(name=i.name, pathname=pathname, parent=parent)
                     folder.save()
                 _scan_dataset_folder(hdf5file, i, root_path, folder)
             except Exception as excep:
@@ -118,7 +118,7 @@ def _scan_dataset_folder(hdf5file: Hdf5File, parent_path: Path, root_path: Path,
 
 
 # データベースのクリーンアップ
-def _cleanup_database(root_path: Path, parent: models.Folder|None) -> None:
+def _cleanup_database(root_path: Path, parent: models.Folder | None) -> None:
     # フォルダーのクリーンアップ
     q = models.Folder.objects.filter(parent=parent)
     for i in q:
@@ -145,6 +145,7 @@ def _cleanup_database(root_path: Path, parent: models.Folder|None) -> None:
                 i.delete()
         except Exception as excep:
             logger.error(f'Error at dataset._cleanup_database: {str(excep)}')
+
 
 # データセットフォルダー内のスキャン(ルート直下)
 def scan_dataset() -> None:

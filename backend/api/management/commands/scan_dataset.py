@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 import api.dataset
 
+
 class Command(BaseCommand):
     help = 'データセットフォルダー内の画像をスキャンします。'
 

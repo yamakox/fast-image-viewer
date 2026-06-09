@@ -362,3 +362,13 @@ Django REST frameworkの[Custom renderers](https://www.django-rest-framework.org
             return self.__retrieve_image(request, pk)
         return super().retrieve(request, pk)
 ```
+
+### ruffによるチェックと整形
+
+```bash
+uv run ruff check
+```
+
+```bash
+uv run ruff format
+```
