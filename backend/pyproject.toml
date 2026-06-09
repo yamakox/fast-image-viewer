@@ -34,3 +34,11 @@ dev = ["debugpy>=1.8.20", "ruff>=0.15.15"]
 
 [project.urls]
 "Homepage" = "https://github.com/yamakox/fast-image-viewer"
+
+# NOTE: project.scriptsはパッケージを作成する場合のみ使うことができる。
+#       warning: Skipping installation of entry points (`project.scripts`) 
+#       for package `fast-image-viewer` because this project is not packaged; 
+#       to install entry points, set `tool.uv.package = true` or define a `build-system`
+#
+# [project.scripts]
+# fast-image-viewer = "main:main"
