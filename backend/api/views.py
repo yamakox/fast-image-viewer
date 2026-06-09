@@ -118,24 +118,12 @@ class ImageViewSet(viewsets.ModelViewSet):
             }
         )
 
-    @action(
-        methods=['get'],
-        detail=True,
-        renderer_classes=[
-            image_renderers.JPEGRenderer,
-        ],
-    )
+    @action(methods=['get'], detail=True, renderer_classes=[image_renderers.JPEGRenderer])
     def image(self, request, pk=None):
         logger.debug(f'image: {pk=} {request=}')
         return self.__retrieve_image(request, pk)
 
-    @action(
-        methods=['get'],
-        detail=True,
-        renderer_classes=[
-            image_renderers.JPEGRenderer,
-        ],
-    )
+    @action(methods=['get'], detail=True, renderer_classes=[image_renderers.JPEGRenderer])
     def thumbnail(self, request, pk=None):
         logger.debug(f'image: {pk=} {request=}')
         try:
@@ -169,6 +157,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         renderer = image_renderers.find_renderer(image_filepath)
         if not renderer:
             raise BadRequest('未サポートの画像形式です: ' + image_filepath.name)
+        self.request.accepted_renderer = renderer
 
         with open(image_filepath, 'rb') as f:
             bindata = f.read()
