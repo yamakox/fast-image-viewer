@@ -2,6 +2,27 @@
 
 [Django](https://www.djangoproject.com/)と[Django REST framework](https://www.django-rest-framework.org/)を使ってバックエンドのREST APIを実装している。
 
+## .env設定
+
+`.env.example`をコピーして`.env`を作成する。
+
+|環境変数名|説明|
+|---|---|
+|DEBUG|`True`の場合デバッグモードで起動する。本番では`False`にする。|
+|STATIC_ROOT|Djangoの静的ファイルの格納先フォルダーを指定する。詳細は[こちらの説明](#静的ファイルstaticfilesを配置公開する)を参照。|
+|PAGINATION_SIZE|サムネイル画像一覧のページネーションにおいて、1ページあたりの画像数を指定する。|
+|CORS_ALLOWED_ORIGINS|`http://localhost:5173`など、フロントエンドのオリジンを指定する。`;`で複数指定できる。|
+|FIV_APPDATA_FOLDER_PATH|`db.sqlite3`や`thumbnail.hdf5`などのアプリデータの格納先フォルダーを指定する。|
+|FIV_DATASET_FOLDER_PATH|画像データの格納先フォルダーを指定する。|
+|FIV_THUMBNAIL_SIZE|正方形にクロップした画像の縮小サイズ(サムネイル画像のサイズ)を指定する。|
+|FIV_THUMBNAIL_QUALITY|サムネイル画像をJPEGで保存するときの画質(〜100)を指定する。|
+
+## 起動
+
+```bash
+uv run -m uvicorn --host=localhost --port=8000 fast_image_viewer.asgi:application
+```
+
 ## REST API仕様
 
 `Accept`ヘッダーで取得したいコンテンツ型のMIMEタイプを指定できる。詳細は、[Django REST framework](https://www.django-rest-framework.org/)の[Content negotiation](https://www.django-rest-framework.org/api-guide/content-negotiation/)を参照。

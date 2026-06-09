@@ -133,9 +133,7 @@ STATIC_ROOT = env.STATIC_ROOT
 CORS_ALLOW_CREDENTIALS = True
 
 # アクセスを許可したいURL（アクセス元）を追加
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8000',
-]
+CORS_ALLOWED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 
 # プリフライト(事前リクエスト)の設定 (デフォルトは86400秒==1日)
 # 30分だけ許可
