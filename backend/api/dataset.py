@@ -38,7 +38,7 @@ class Hdf5File:
                 self.h5.close()
                 self.h5 = None
                 self.group = None
-        except:
+        except Exception:
             pass
 
     def set_data(self, id: int, data: bytes) -> None:

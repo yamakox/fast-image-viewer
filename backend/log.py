@@ -1,6 +1,5 @@
 import env
 import logging
-import os
 
 logger: logging.Logger | None = logging.getLogger('fast-image-viewer')
 

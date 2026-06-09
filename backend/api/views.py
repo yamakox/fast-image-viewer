@@ -6,7 +6,7 @@
 # from django.db.models.query import QuerySet
 from django.core.exceptions import BadRequest
 from django.http import HttpResponse, JsonResponse
-from rest_framework import viewsets, pagination, renderers
+from rest_framework import viewsets, pagination # , renderers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
