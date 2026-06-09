@@ -1,27 +1,36 @@
 [project]
 name = "fast-image-viewer"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.0.0"
+description = "サーバ内に蓄積した画像を素早く探索する画像表示Webアプリ"
+authors = [{ name = "yamakox" }]
 readme = "README.md"
+license = "Apache-2.0"
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Operating System :: OS Independent",
+  "Development Status :: 4 - Beta",
+]
 requires-python = ">=3.13"
 dependencies = [
-    "django>=6.0.5",
-    "django-cors-headers>=4.9.0",
-    "django-filter>=25.2",
-    "djangorestframework>=3.17.1",
-    "gunicorn>=26.0.0",
-    "h5py>=3.16.0",
-    "imagehash>=4.3.2",
-    "markdown>=3.10.2",
-    "numpy>=2.4.6",
-    "pillow>=12.2.0",
-    "python-dateutil>=2.9.0.post0",
-    "python-dotenv>=1.2.2",
-    "uvicorn>=0.48.0",
+  "django>=6.0.5",
+  "django-cors-headers>=4.9.0",
+  "django-filter>=25.2",
+  "djangorestframework>=3.17.1",
+  "gunicorn>=26.0.0",
+  "h5py>=3.16.0",
+  "imagehash>=4.3.2",
+  "markdown>=3.10.2",
+  "numpy>=2.4.6",
+  "pillow>=12.2.0",
+  "python-dateutil>=2.9.0.post0",
+  "python-dotenv>=1.2.2",
+  "uvicorn>=0.48.0",
 ]
 
 [dependency-groups]
-dev = [
-    "debugpy>=1.8.20",
-    "ruff>=0.15.15",
-]
+dev = ["debugpy>=1.8.20", "ruff>=0.15.15"]
+
+[project.urls]
+"Homepage" = "https://github.com/yamakox/fast-image-viewer"
