@@ -21,7 +21,8 @@ class Hdf5File:
     h5 = None
     group = None
 
-    def __init__(self, path: Path, mode='r'):
+    def __init__(self, folder_path: Path, mode='r'):
+        path = folder_path / settings.API_THUMBNAIL_FILENAME
         self.h5 = h5py.File(path, mode)
         self.group = self.h5[API_THUMBNAIL_GROUP] if API_THUMBNAIL_GROUP in self.h5 else self.h5.create_group(API_THUMBNAIL_GROUP)
 
@@ -55,6 +56,12 @@ class Hdf5File:
         if name not in self.group:
             raise Exception(f'{id=} not found in {settings.API_THUMBNAIL_FILENAME}')
         return np.asarray(self.group[name]).tobytes()
+    
+    def has_data(self, id: int) -> bool:
+        if not self.group:
+            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
+        name = str(id)
+        return name in self.group
 
 
 # 画像ファイルのサムネイルとデータの作成
@@ -116,7 +123,7 @@ def _cleanup_database(root_path: Path, parent: models.Folder|None) -> None:
     q = models.Folder.objects.filter(parent=parent)
     for i in q:
         try:
-            path = root_path / i.path
+            path = root_path / i.pathname
             if path.exists():
                 _cleanup_database(root_path, i)
             else:
@@ -141,9 +148,8 @@ def _cleanup_database(root_path: Path, parent: models.Folder|None) -> None:
 
 # データセットフォルダー内のスキャン(ルート直下)
 def scan_dataset() -> None:
-    root_path = Path(env.FIV_DATASET_FOLDER_PATH)
-    path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
-    path = path / settings.API_THUMBNAIL_FILENAME
+    root_path = Path(env.FIV_DATASET_FOLDER_PATH).resolve()
+    appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
     _cleanup_database(root_path, None)
-    with Hdf5File(path, 'a') as hdf5file:
+    with Hdf5File(appdata_path, 'a') as hdf5file:
         _scan_dataset_folder(hdf5file, root_path, root_path, None)
