@@ -29,9 +29,15 @@ uv run -m uvicorn --host=localhost --port=8000 fast_image_viewer.asgi:applicatio
 
 Webブラウザ(Google ChromeとSafari)からAPIにアクセスすると、HTML形式のデータが返される。(`Accept`ヘッダーの先頭に`text/html`がいるため)
 
+Django REST frameworkで実装したREST APIは、原則として、`application/json`または`image/jpeg`などの画像タイプのデータを返す。
+
+しかし、Djangoに登録しているURLパターンに一致しない(つまり本仕様に無い)URLパス名など、想定外のAPI呼び出しが行われた場合、`text/html`のHTMLデータでHTTPステータスコード`404`・`500`などを返す場合がある。`200`以外のHTTPステータスコードで返ってきた場合、ブラウザの開発者ツールでレスポンスのボディを閲覧すればよいので、フロントエンドではレスポンスのボディをハンドリングする必要はない。
+
 ### データフォルダーAPI
 
 #### データフォルダーの一覧取得
+
+##### リクエストの形式
 
 ```http
 GET /api/v1/folders HTTP/1.1
@@ -43,8 +49,13 @@ Accept: application/json
 |---|---|---|
 |rootonly|`yes`など、1文字以上の任意の文字列|親フォルダーの無い最上位階層のフォルダー一覧を取得する|
 |parent|親フォルダーのID|指定された親フォルダー配下のフォルダー一覧を取得する|
+|ordering|`-name`, `parent,name` など|フィールドの値で並べ替えを行う。降順(`-`で始まるフィールド名)の場合、`NULL`値は後ろ側に並ぶ。詳細は[DRFのOrderingFilter](https://www.django-rest-framework.org/api-guide/filtering/#orderingfilter)を参照。|
 
-`/api/v1/folders/?parent=1`の応答例:
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/folders?parent=1`の応答例(クエリーパラメータが適切な場合)
 
 ```json
 [
@@ -59,7 +70,21 @@ Accept: application/json
 ]
 ```
 
+- HTTPステータスコード: `400`:
+  
+  `/api/v1/folders?parent=99`の応答例(クエリーパラメータが不適切な場合)
+
+```json
+{
+    "parent": [
+        "正しく選択してください。選択したものは候補にありません。"
+    ]
+}
+```
+
 #### データフォルダーの詳細情報の取得
+
+##### リクエストの形式
 
 ```http
 GET /api/v1/folders/<int:id> HTTP/1.1
@@ -67,7 +92,11 @@ Accept: application/json
 
 ```
 
-`/api/v1/folders/2/`の応答例:
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/folders/2`の応答例(idが適切な場合)
 
 ```json
 {
@@ -78,9 +107,21 @@ Accept: application/json
 }
 ```
 
+- HTTPステータスコード: `404`:
+  
+  `/api/v1/folders/99`の応答例(idが不適切な場合)
+
+```json
+{
+    "detail": "No Folder matches the given query."
+}
+```
+
 ### 画像データAPI
 
 #### 画像データの一覧取得
+
+##### リクエストの形式
 
 ```http
 GET /api/v1/images HTTP/1.1
@@ -96,7 +137,11 @@ Accept: application/json
 |ordering|`-favorite`, `favorite,name` など|フィールドの値で並べ替えを行う。降順(`-`で始まるフィールド名)の場合、`NULL`値は後ろ側に並ぶ。詳細は[DRFのOrderingFilter](https://www.django-rest-framework.org/api-guide/filtering/#orderingfilter)を参照。|
 |page_size|1ページに表示する件数|ページネーションにおいて、1ページあたりの表示件数を指定できる。デフォルトは`.env`の`PAGINATION_SIZE`。|
 
-`/api/v1/images/?rootonly=yes&ordering=-favorite,-timestamp&page_size=5`の応答例:
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/images?rootonly=yes&ordering=-favorite,-timestamp&page_size=5`の応答例:
 
 ```json
 {
@@ -134,7 +179,29 @@ Accept: application/json
 }
 ```
 
+|項目名|値の説明|
+|---|---|
+|count|クエリーパラメータに一致する画像データの総数。全ページの画像データの合計になる。|
+|page|ページネーションのページ番号。|
+|num_pages|ページネーションのページ総数。|
+|page_size|1ページあたりの画像データの数。上記の例のように、クエリーパラメータの値ではなく、`.env`の`PAGINATION_SIZE`の値が返る。|
+|results|クエリーパラメータに一致する画像データの配列。|
+
+- HTTPステータスコード: `400`:
+  
+  `/api/v1/images?parent=99`の応答例:
+
+```json
+{
+    "parent": [
+        "正しく選択してください。選択したものは候補にありません。"
+    ]
+}
+```
+
 #### 画像データの詳細情報の取得
+
+##### リクエストの形式
 
 ```http
 GET /api/v1/images/<int:id> HTTP/1.1
@@ -142,7 +209,11 @@ Accept: application/json
 
 ```
 
-`/api/v1/images/11/`の応答例:
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/images/11`の応答例:
 
 ```json
 {
@@ -155,15 +226,19 @@ Accept: application/json
 }
 ```
 
-#### お気に入りの設定
+- HTTPステータスコード: `404`:
+  
+  `/api/v1/images/1000`の応答例(idが不適切な場合)
 
-`PUT`や`PATCH`では、URL末尾の`/`を省略すると以下のエラーが発生する。
-
-```text
-RuntimeError: You called this URL via PUT, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining PUT data.
+```json
+{
+    "detail": "No Image matches the given query."
+}
 ```
 
-しかし、`DefaultRouter`のパラメータに[`trailing_slash=False`](https://www.django-rest-framework.org/api-guide/routers/#defaultrouter)を与えると、末尾の`/`を省略したURLパターンになる。
+#### お気に入りの設定
+
+##### リクエストの形式
 
 ```http
 PATCH /api/v1/images/<int:id> HTTP/1.1
@@ -175,20 +250,36 @@ Content-Type: application/json
 }
 ```
 
-|フィールド名|値|説明|
-|---|---|---|
-|favorite|日時文字列, `null`|お気に入りから外す場合は`null`、お気に入りに入れる場合はISO8601形式の日時文字列|
+|項目名|値の説明|
+|---|---|
+|favorite|お気に入りから外す場合は`null`、お気に入りにする場合はISO8601形式の現在日時を指定する。|
 
-`/api/v1/images/11/`の応答例:
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/images/300`の応答例:
 
 ```json
 {
-  "id": 11,
+  "id": 300,
   "favorite": "2026-06-08T10:00:00+09:00"
 }
 ```
 
+- HTTPステータスコード: `404`:
+  
+  `/api/v1/images/1000`の応答例(idが不適切な場合)
+
+```json
+{
+  "detail": "Image data not found."
+}
+```
+
 #### 画像データの取得
+
+##### リクエストの形式
 
 ```http
 GET /api/v1/images/<int:id>/image HTTP/1.1
@@ -196,12 +287,68 @@ Accept: image/*
 
 ```
 
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/images/300/image`の応答例
+
+```text
+Content-Type: image/jpeg
+
+...画像ファイルのバイナリデータ...
+```
+
+- HTTPステータスコード: `404`:
+  
+  `/api/v1/images/1000/image`の応答例(idが不適切な場合)
+
+```json
+{
+  "detail": "Image data not found."
+}
+```
+
+- HTTPステータスコード: `500`:
+  
+  `/api/v1/images/300/image`の応答例(画像ファイルが未サポート形式の場合)
+
+```json
+{
+  "detail": "Unsupported image format: test.svg"
+}
+```
+
 #### サムネイル画像データの取得
+
+##### リクエストの形式
 
 ```http
 GET /api/v1/images/<int:id>/thumbnail HTTP/1.1
 Accept: image/*
 
+```
+
+##### レスポンスの形式
+
+- HTTPステータスコード: `200`:
+  
+  `/api/v1/images/300/thumbnail`の応答例
+
+```text
+Content-Type: image/jpeg
+
+...画像ファイルのバイナリデータ...
+```
+
+- HTTPステータスコード: `404`:
+  
+  `/api/v1/images/1000/image`の応答例(idが不適切な場合)
+
+```json
+{
+  "detail": "Thumbnail image not found."
+}
 ```
 
 ## 開発メモ
@@ -278,7 +425,15 @@ uv run manage.py scan_dataset
 
 `fast_image_viewer/settings.py`に[`django-filter`](https://www.django-rest-framework.org/api-guide/filtering/#djangofilterbackend)の設定を追加する。([Django REST frameworkを追加](#django-rest-frameworkを追加)したときの設定忘れ)
 
-[Django REST frameworkを使って](https://www.django-rest-framework.org/tutorial/quickstart/)SerializersとViewSetsを実装して、routerにViewSetsを登録する。
+[Django REST frameworkを使って](https://www.django-rest-framework.org/tutorial/quickstart/)SerializersとViewSetsを実装して、router(`DefaultRouter`)にViewSetsを登録する。
+
+デフォルトの`DefaultRouter`の場合、`PUT`や`PATCH`では、URL末尾の`/`を省略すると以下のエラーが発生する。
+
+```text
+RuntimeError: You called this URL via PUT, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining PUT data.
+```
+
+しかし、`DefaultRouter`のパラメータに[`trailing_slash=False`](https://www.django-rest-framework.org/api-guide/routers/#defaultrouter)を与えると、末尾の`/`を省略したURLパターンになる。
 
 ### 静的ファイル(staticfiles)を配置・公開する
 

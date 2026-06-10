@@ -24,6 +24,10 @@ GET http://localhost:8000/api/v1/folders/2 HTTP/1.1
 Accept: application/json
 
 ###
+GET http://localhost:8000/api/v1/folders/99 HTTP/1.1
+Accept: application/json
+
+###
 
 # 画像データAPI
 GET http://localhost:8000/api/v1/images HTTP/1.1

@@ -4,14 +4,13 @@
 #     return JsonResponse({'value': 'Hello from Django!'})
 
 # from django.db.models.query import QuerySet
-from django.core.exceptions import BadRequest
 from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, pagination  # , renderers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
-from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
+from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from . import models
 from . import serializers
 from . import renderers as image_renderers
@@ -25,10 +24,24 @@ appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
 # hdf5file = dataset.Hdf5File(appdata_path)
 
 
-def _make_404_response(id: int, **kwargs) -> JsonResponse:
+def _make_400_response(**kwargs) -> JsonResponse:
     return JsonResponse(
-        dict(id=id, **kwargs),
+        dict(**kwargs),
+        status=HTTP_400_BAD_REQUEST,
+    )
+
+
+def _make_404_response(**kwargs) -> JsonResponse:
+    return JsonResponse(
+        dict(**kwargs),
         status=HTTP_404_NOT_FOUND,
+    )
+
+
+def _make_500_response(**kwargs) -> JsonResponse:
+    return JsonResponse(
+        dict(**kwargs),
+        status=HTTP_500_INTERNAL_SERVER_ERROR,
     )
 
 
@@ -106,7 +119,9 @@ class ImageViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, pk)
 
     def partial_update(self, request, pk=None):
-        image = models.Image.objects.get(pk=pk)
+        image = self.__get_image_record(pk)
+        if image is None:
+            return _make_404_response(detail='Image data not found.')
         serializer = serializers.ImageSerializer(image, request.data, partial=True)
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)
@@ -129,7 +144,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         try:
             hdf5file = dataset.Hdf5File(appdata_path)
             if not hdf5file.has_data(pk):
-                return _make_404_response(pk)
+                return _make_404_response(detail='Thumbnail image not found.')
             bindata = hdf5file.get_data(pk)
         except Exception as excep:
             return JsonResponse(
@@ -143,20 +158,19 @@ class ImageViewSet(viewsets.ModelViewSet):
         return response
 
     def __retrieve_image(self, request, pk):
-        images = models.Image.objects.filter(id=pk)
-        if not images:
-            return _make_404_response(pk)
-        image = images[0]
+        image = self.__get_image_record(pk)
+        if image is None:
+            return _make_404_response(detail='Image data not found.')
         if image.parent:
             image_filepath = root_path / image.parent.pathname / image.name
         else:
             image_filepath = root_path / image.name
         if not image_filepath.exists():
-            return _make_404_response(pk, file=str(image_filepath))
+            return _make_404_response(detail='Image file not found.', file=str(image_filepath))
 
         renderer = image_renderers.find_renderer(image_filepath)
         if not renderer:
-            raise BadRequest('未サポートの画像形式です: ' + image_filepath.name)
+            return _make_500_response(detail='Unsupported image format: ' + image_filepath.name)
         self.request.accepted_renderer = renderer
 
         with open(image_filepath, 'rb') as f:
@@ -166,3 +180,11 @@ class ImageViewSet(viewsets.ModelViewSet):
         response = HttpResponse(bindata, content_type=renderer.media_type)
         response['Content-Length'] = len(bindata)
         return response
+
+    def __get_image_record(self, pk) -> models.Image | None:
+        if not str(pk).isnumeric():
+            return None
+        images = models.Image.objects.filter(id=pk)
+        if not images:
+            return None
+        return images[0]
