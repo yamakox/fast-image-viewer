@@ -9,6 +9,9 @@
 |環境変数名|説明|
 |---|---|
 |DEBUG|`True`の場合デバッグモードで起動する。本番では`False`にする。|
+|HOST|main.py用。サーバのホスト名を指定する。任意のホストIPアドレスで接続する場合は`0.0.0.0`を指定する。|
+|PORT|main.py用。サーバのポート番号を指定する。|
+|DEBUG|`True`の場合デバッグモードで起動する。本番では`False`にする。|
 |STATIC_ROOT|Djangoの静的ファイルの格納先フォルダーを指定する。詳細は[こちらの説明](#静的ファイルstaticfilesを配置公開する)を参照。|
 |PAGINATION_SIZE|サムネイル画像一覧のページネーションにおいて、1ページあたりの画像数を指定する。|
 |CORS_ALLOWED_ORIGINS|`http://localhost:5173`など、フロントエンドのオリジンを指定する。`;`で複数指定できる。|
@@ -20,6 +23,13 @@
 ## 起動
 
 ```bash
+uv run main.py
+```
+
+`uvicorn`から起動する場合、以下のコマンドを実行する。
+
+```bash
+# uv run uvicornでもOK
 uv run -m uvicorn --host=localhost --port=8000 fast_image_viewer.asgi:application
 ```
 

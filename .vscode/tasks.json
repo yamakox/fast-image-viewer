@@ -47,7 +47,7 @@
       "options": {
         "cwd": "${workspaceFolder}/backend"
       },
-      "command": "uv run -m debugpy --listen localhost:8001 -m uvicorn --host=localhost --port=8000 fast_image_viewer.asgi:application --reload"
+      "command": "uv run -m debugpy --listen localhost:8001 main.py"
     },
     {
       "label": "T022: frontend起動 (npm run dev)",
@@ -58,23 +58,39 @@
       "command": "npm run dev"
     },
     {
-      "label": "T031: ソースコードのチェック",
+      "label": "T031: backendのソースコードチェック",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}/backend"
       },
-      "command": "echo '***** Frontend check *****' && cd frontend && npx oxlint && cd ../backend && echo '***** Backend check *****' && uv run ruff check"
+      "command": "uv run ruff check"
     },
     {
-      "label": "T032: ソースコードの書式整形",
+      "label": "T032: backendのソースコード書式整形",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}/backend"
       },
-      "command": "cd frontend && npm run format && cd ../backend && uv run ruff format"
+      "command": "uv run ruff format"
     },
     {
-      "label": "T033: Vueアプリのビルド",
+      "label": "T033: frontendのソースコードチェック",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "command": "npx oxlint"
+    },
+    {
+      "label": "T034: frontendのソースコード書式整形",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "command": "npm run format"
+    },
+    {
+      "label": "T035: Vueアプリのビルド",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}/frontend"

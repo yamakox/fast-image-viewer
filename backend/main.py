@@ -1,8 +1,15 @@
 import uvicorn
+import env
 
 
 def main():
-    uvicorn.run('fast_image_viewer.asgi:application', port=8000, log_level='info')
+    uvicorn.run(
+        'fast_image_viewer.asgi:application',
+        host=env.HOST,
+        port=env.PORT,
+        log_level='info',
+        reload=env.DEBUG,
+    )
 
 
 if __name__ == '__main__':

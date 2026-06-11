@@ -6,6 +6,8 @@ load_dotenv()
 
 # Django settings.py
 DEBUG = ast.literal_eval(os.environ.get('DEBUG', 'False'))
+HOST = os.environ.get('HOST', '127.0.0.1')
+PORT = int(os.environ.get('PORT', '8000'))
 STATIC_ROOT = os.environ.get('STATIC_ROOT', '/var/www/example.com/static/')
 PAGINATION_SIZE = int(os.environ.get('PAGINATION_SIZE', '100'))
 CORS_ALLOWED_ORIGINS = [x for x in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(';') if x]
