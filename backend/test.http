@@ -46,6 +46,10 @@ GET http://localhost:8000/api/v1/images?rootonly=yes&ordering=-favorite,-timesta
 Accept: application/json
 
 ###
+GET http://localhost:8000/api/v1/images?rootonly=yes&ordering=-favorite,-timestamp&page_size=5&page=2 HTTP/1.1
+Accept: application/json
+
+###
 GET http://localhost:8000/api/v1/images?parent=7 HTTP/1.1
 Accept: application/json
 

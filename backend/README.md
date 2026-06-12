@@ -163,6 +163,7 @@ Accept: application/json
 |favoriteonly|`yes`など|お気に入りとして登録されている画像データ一覧を取得する|
 |parent|親フォルダーのID|指定された親フォルダー配下の画像データ一覧を取得する|
 |ordering|`-favorite`, `favorite,name` など|フィールドの値で並べ替えを行う。降順(`-`で始まるフィールド名)の場合、`NULL`値は後ろ側に並ぶ。詳細は[DRFのOrderingFilter](https://www.django-rest-framework.org/api-guide/filtering/#orderingfilter)を参照。|
+|page|ページ番号|ページネーションにおけるページ番号。|
 |page_size|1ページに表示する件数|ページネーションにおいて、1ページあたりの表示件数を指定できる。デフォルトは`.env`の`PAGINATION_SIZE`。|
 
 ##### レスポンスの形式
