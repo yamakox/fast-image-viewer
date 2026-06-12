@@ -24,8 +24,14 @@ npm i -D @tsconfig/node24 oxfmt oxlint
 npm i tailwindcss @tailwindcss/vite
 ```
 
-サイドバー用に[*Flowbite*をインストール](https://flowbite.com/docs/getting-started/vue/)する。
+サイドバー用に[*Flowbite*](https://flowbite.com/docs/getting-started/vue/)をインストールする。
 
 ```bash
 npm i flowbite
+```
+
+サブフォルダー表示用に[*Vue Router*](https://router.vuejs.org/guide/essentials/dynamic-matching.html)をインストールする。
+
+```bash
+npm i vue-router
 ```

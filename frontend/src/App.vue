@@ -1,7 +1,21 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <HelloWorld />
+  <div class="app-container">
+    <RouterView class="router-view" />
+  </div>
 </template>
+
+<style scoped>
+.app-container {
+  margin: 0;
+  padding: 0;
+}
+
+.router-view {
+  margin: 0;
+  padding: 0;
+}
+</style>
