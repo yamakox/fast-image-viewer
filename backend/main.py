@@ -9,6 +9,7 @@ def main():
         port=env.PORT,
         log_level='info',
         reload=env.DEBUG,
+        workers=env.WORKERS,
     )
 
 

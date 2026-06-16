@@ -42,15 +42,27 @@
       "command": "uv run manage.py shell"
     },
     {
-      "label": "T021: デバッグモードでbackend起動",
+      "label": "T021: 本番モードでbackend起動",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend",
+        "env": {
+          "DEBUG": "False",
+          "WORKERS": "16"
+        }
+      },
+      "command": "uv run main.py"
+    },
+    {
+      "label": "T022: デバッグモードでbackend起動",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}/backend"
       },
-      "command": "uv run -m debugpy --listen localhost:8001 main.py"
+      "command": "uv run -m debugpy --listen localhost:8001 -m uvicorn --host=localhost --port=8000 fast_image_viewer.asgi:application --reload"
     },
     {
-      "label": "T022: frontend起動 (npm run dev)",
+      "label": "T023: frontend起動 (npm run dev)",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
