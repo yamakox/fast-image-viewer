@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type Ref, type ComputedRef, watch } from 'vue'
+import { ref, computed, onUnmounted, type Ref, type ComputedRef, watch } from 'vue'
 import { getImageUrl, patchData } from '../util'
 import type { ImageListItem } from '../types'
 
@@ -43,6 +43,156 @@ const imageFavorite: ComputedRef<string | null> = computed(() => {
   }
   return image.favorite
 })
+
+const MIN_SCALE = 1
+const MAX_SCALE = 5
+const WHEEL_ZOOM_STEP = 0.1
+
+const imageScale: Ref<number> = ref(1)
+const translateX: Ref<number> = ref(0)
+const translateY: Ref<number> = ref(0)
+const imageTransformStyle = computed(() => ({
+  transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${imageScale.value})`,
+}))
+
+let isPanning = false
+let isTouchPanning = false
+let isPinching = false
+let hasPointerMoved = false
+let panStartX = 0
+let panStartY = 0
+let panOriginX = 0
+let panOriginY = 0
+let pinchStartDistance = 0
+let pinchStartScale = 1
+
+function updatePan(clientX: number, clientY: number) {
+  const dx = clientX - panStartX
+  const dy = clientY - panStartY
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+    hasPointerMoved = true
+  }
+  translateX.value = panOriginX + dx
+  translateY.value = panOriginY + dy
+}
+
+function startPan(clientX: number, clientY: number) {
+  panStartX = clientX
+  panStartY = clientY
+  panOriginX = translateX.value
+  panOriginY = translateY.value
+  hasPointerMoved = false
+}
+
+// サブルーチン
+function clampScale(scale: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale))
+}
+
+function resetImageTransform() {
+  imageScale.value = 1
+  translateX.value = 0
+  translateY.value = 0
+  isPanning = false
+  isTouchPanning = false
+  isPinching = false
+  hasPointerMoved = false
+}
+
+function getTouchDistance(touches: TouchList): number {
+  const dx = touches[0].clientX - touches[1].clientX
+  const dy = touches[0].clientY - touches[1].clientY
+  return Math.hypot(dx, dy)
+}
+
+function handleWheel(event: WheelEvent) {
+  const nextScale = clampScale(imageScale.value + (event.deltaY < 0 ? WHEEL_ZOOM_STEP : -WHEEL_ZOOM_STEP))
+  imageScale.value = nextScale
+  if (nextScale === MIN_SCALE) {
+    translateX.value = 0
+    translateY.value = 0
+  }
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (!isPanning) {
+    return
+  }
+  event.preventDefault()
+  updatePan(event.clientX, event.clientY)
+}
+
+function stopPanning(event: PointerEvent) {
+  if (!isPanning) {
+    return
+  }
+  isPanning = false
+  const target = event.currentTarget
+  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId)
+  }
+}
+
+function handlePointerDown(event: PointerEvent) {
+  if (isPinching || imageScale.value <= MIN_SCALE || event.button !== 0 || event.pointerType === 'touch') {
+    return
+  }
+  isPanning = true
+  startPan(event.clientX, event.clientY)
+  const target = event.currentTarget
+  if (target instanceof HTMLElement) {
+    target.setPointerCapture(event.pointerId)
+  }
+}
+
+function handleTouchStart(event: TouchEvent) {
+  if (event.touches.length === 2) {
+    isTouchPanning = false
+    isPinching = true
+    hasPointerMoved = true
+    pinchStartDistance = getTouchDistance(event.touches)
+    pinchStartScale = imageScale.value
+    return
+  }
+  if (event.touches.length === 1 && imageScale.value > MIN_SCALE) {
+    isTouchPanning = true
+    startPan(event.touches[0].clientX, event.touches[0].clientY)
+  }
+}
+
+function handleTouchMove(event: TouchEvent) {
+  if (isPinching && event.touches.length === 2) {
+    event.preventDefault()
+    const nextScale = clampScale(pinchStartScale * (getTouchDistance(event.touches) / pinchStartDistance))
+    imageScale.value = nextScale
+    if (nextScale === MIN_SCALE) {
+      translateX.value = 0
+      translateY.value = 0
+    }
+    return
+  }
+  if (isTouchPanning && event.touches.length === 1 && imageScale.value > MIN_SCALE) {
+    event.preventDefault()
+    updatePan(event.touches[0].clientX, event.touches[0].clientY)
+  }
+}
+
+function handleTouchEnd(event: TouchEvent) {
+  if (event.touches.length < 2) {
+    isPinching = false
+  }
+  if (event.touches.length === 0) {
+    isTouchPanning = false
+  }
+}
+
+function handleStageClick() {
+  if (hasPointerMoved) {
+    hasPointerMoved = false
+    return
+  }
+  navbarVisible.value = !navbarVisible.value
+}
 
 // サブルーチン
 function fireCloseEvent() {
@@ -89,14 +239,46 @@ watch(
   () => props.index,
   () => {
     navbarVisible.value = true
+    resetImageTransform()
   }
 )
+
+watch(imageUrl, () => {
+  resetImageTransform()
+})
+
+onUnmounted(() => {
+  isPanning = false
+  isTouchPanning = false
+  isPinching = false
+})
 </script>
 
 <template>
-  <div class="image-viewer" @click="navbarVisible = !navbarVisible">
+  <div class="image-viewer">
     <!-- 画像 -->
-    <img :src="imageUrl" :alt="imageName" class="z-10 h-full w-full object-contain" />
+    <div
+      class="image-stage"
+      :class="{ 'image-stage--draggable': imageScale > MIN_SCALE }"
+      @wheel.prevent.stop="handleWheel"
+      @pointerdown.stop="handlePointerDown"
+      @pointermove="handlePointerMove"
+      @pointerup="stopPanning"
+      @pointercancel="stopPanning"
+      @touchstart.stop="handleTouchStart"
+      @touchmove.prevent="handleTouchMove"
+      @touchend.stop="handleTouchEnd"
+      @touchcancel.stop="handleTouchEnd"
+      @click.stop="handleStageClick"
+    >
+      <img
+        :src="imageUrl"
+        :alt="imageName"
+        class="image-content z-10"
+        :style="imageTransformStyle"
+        draggable="false"
+      />
+    </div>
 
     <!-- 上部ナビゲーション -->
     <nav v-if="navbarVisible" class="fixed top-0 z-50 flex w-full items-center justify-end bg-transparent p-4">
@@ -197,5 +379,31 @@ watch(
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.image-stage {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.image-stage--draggable {
+  cursor: grab;
+}
+
+.image-stage--draggable:active {
+  cursor: grabbing;
+}
+
+.image-content {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  user-select: none;
 }
 </style>
