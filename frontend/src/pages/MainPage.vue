@@ -3,10 +3,11 @@ import FolderOpenIcon from '../components/FolderOpenIcon.vue'
 import AngleLeftIcon from '../components/AngleLeftIcon.vue'
 import { watch, computed, ref, type Ref, type ComputedRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getData, getThumbnailUrl, getImageUrl } from '../util'
+import { getData, getThumbnailUrl } from '../util'
 import type { Folder, FolderListItem, ImageListPage } from '../types'
 import FolderMenuItem from '../components/FolderMenuItem.vue'
 import Pagination from '../components/Pagination.vue'
+import ImageViewer from '../components/ImageViewer.vue'
 
 // Vue Router
 const route = useRoute()
@@ -24,6 +25,7 @@ const folders: Ref<FolderListItem[]> = ref([])
 const thumbnails: Ref<ImageListPage | null> = ref(null)
 const page: Ref<number> = ref(1)
 const numOfPages: Ref<number> = ref(1)
+const thumbnailIndex: Ref<number | null> = ref(null)
 
 // 型定義
 interface FoldersQuery {
@@ -165,14 +167,13 @@ function handlePageClick(page: number) {
 
     <div class="mt-14 ml-0 md:mt-0 md:ml-64 flex flex-col items-center justify-start">
       <!-- サムネイル -->
-      <div class="flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 py-4 px-1">
+      <div class="grid grid-cols-[repeat(auto-fit,4.5rem)] gap-0.5 sm:grid-cols-[repeat(auto-fit,6rem)] sm:gap-1 py-4 px-1 w-full justify-center">
         <a
-          v-for="thumbnail in thumbnails?.results ?? []"
-          :key="thumbnail.id"
-          :href="getImageUrl(thumbnail.id)"
-          target="_blank"
+          v-for="thumbnail, index in thumbnails?.results ?? []"
+          :key="index"
+          @click="thumbnailIndex = index"
         >
-          <img :src="getThumbnailUrl(thumbnail.id)" :alt="thumbnail.name" class="w-12 h-12 sm:rounded-base sm:w-24 sm:h-24" />
+          <img :src="getThumbnailUrl(thumbnail.id)" :alt="thumbnail.name" class="w-18 h-18 sm:rounded-base sm:w-24 sm:h-24" />
         </a>
       </div>
 
@@ -183,6 +184,9 @@ function handlePageClick(page: number) {
 
       <!-- ページネーション -->
       <pagination :page="page" :numOfPages="numOfPages" @page-click="handlePageClick" class="m-0 py-4" />
+
+      <!-- 画像ビューアー -->
+      <image-viewer v-if="thumbnailIndex !== null" :index="thumbnailIndex" :images="thumbnails?.results ?? []" @close="thumbnailIndex = null"  />
     </div>
   </div>
 </template>

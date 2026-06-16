@@ -28,6 +28,9 @@ async function patchData(url: string, data: any): Promise<any | null> {
   try {
     const response = await fetch(`${API_BASE_URL}${url}`, {
       method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     })
     if (!response.ok) {

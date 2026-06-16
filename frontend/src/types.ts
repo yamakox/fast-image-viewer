@@ -23,3 +23,12 @@ export interface ImageListPage {
   page_size: number
   results: ImageListItem[]
 }
+
+export interface Image {
+  id: number
+  name: string
+  parent: number | null
+  hash: string
+  timestamp: string
+  favorite: string | null
+}
