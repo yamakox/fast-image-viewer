@@ -72,7 +72,7 @@ watch(
   () => {
     loadPageData()
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 // ページネーションのクリックイベントの処理
@@ -85,7 +85,7 @@ function handlePageClick(page: number) {
   <div class="main-page-container">
     <!-- 半透明なNavbar -->
     <nav
-      class="fixed top-0 z-50 w-full translate-y-0 bg-white/50 dark:bg-dark/50 backdrop-blur-sm transition-transform md:hidden md:-translate-y-full"
+      class="dark:bg-dark/50 fixed top-0 z-50 w-full translate-y-0 bg-white/50 backdrop-blur-sm transition-transform md:hidden md:-translate-y-full"
     >
       <div class="px-3 py-2 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -97,7 +97,8 @@ function handlePageClick(page: number) {
             >
               <angle-left-icon />
             </a>
-            <button v-if="folders.length > 0"
+            <button
+              v-if="folders.length > 0"
               data-drawer-target="main-sidebar"
               data-drawer-toggle="main-sidebar"
               aria-controls="main-sidebar"
@@ -133,7 +134,7 @@ function handlePageClick(page: number) {
     <!-- Sidebar -->
     <aside
       id="main-sidebar"
-      class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 transition-transform -translate-x-full border-e pt-14 md:translate-x-0 md:pt-0"
+      class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 -translate-x-full border-e pt-14 transition-transform md:translate-x-0 md:pt-0"
       aria-label="Sidebar"
     >
       <div class="h-full overflow-y-auto px-3 py-0">
@@ -165,28 +166,33 @@ function handlePageClick(page: number) {
       </div>
     </aside>
 
-    <div class="mt-14 ml-0 md:mt-0 md:ml-64 flex flex-col items-center justify-start">
+    <div class="mt-14 ml-0 flex flex-col items-center justify-start md:mt-0 md:ml-64">
       <!-- サムネイル -->
-      <div class="grid grid-cols-[repeat(auto-fit,4.5rem)] gap-0.5 sm:grid-cols-[repeat(auto-fit,6rem)] sm:gap-1 py-4 px-1 w-full justify-center">
-        <a
-          v-for="thumbnail, index in thumbnails?.results ?? []"
-          :key="index"
-          @click="thumbnailIndex = index"
-        >
-          <img :src="getThumbnailUrl(thumbnail.id)" :alt="thumbnail.name" class="w-18 h-18 sm:rounded-base sm:w-24 sm:h-24" />
+      <div
+        class="grid w-full grid-cols-[repeat(auto-fit,4.5rem)] justify-center gap-0.5 px-1 py-4 sm:grid-cols-[repeat(auto-fit,6rem)] sm:gap-1"
+      >
+        <a v-for="(thumbnail, index) in thumbnails?.results ?? []" :key="index" @click="thumbnailIndex = index">
+          <img
+            :src="getThumbnailUrl(thumbnail.id)"
+            :alt="thumbnail.name"
+            class="sm:rounded-base h-18 w-18 sm:h-24 sm:w-24"
+          />
         </a>
       </div>
 
       <!-- フォルダー内の画像の総数 -->
-      <div class="text-body text-sm font-light text-center">
-        {{ thumbnails?.count }} images
-      </div>
+      <div class="text-body text-center text-sm font-light">{{ thumbnails?.count }} images</div>
 
       <!-- ページネーション -->
       <pagination :page="page" :numOfPages="numOfPages" @page-click="handlePageClick" class="m-0 py-4" />
 
       <!-- 画像ビューアー -->
-      <image-viewer v-if="thumbnailIndex !== null" :index="thumbnailIndex" :images="thumbnails?.results ?? []" @close="thumbnailIndex = null"  />
+      <image-viewer
+        v-if="thumbnailIndex !== null"
+        :index="thumbnailIndex"
+        :images="thumbnails?.results ?? []"
+        @close="thumbnailIndex = null"
+      />
     </div>
   </div>
 </template>

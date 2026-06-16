@@ -34,32 +34,84 @@ const displayingPages: ComputedRef<number[]> = computed(() => {
 
 // サブルーチン
 function incrementDisplayingPages(n: number) {
-  startPage.value = Math.max(1, Math.min(props.numOfPages - (displayingPageCount.value - 1), startPage.value + n * displayingPageCount.value))
+  startPage.value = Math.max(
+    1,
+    Math.min(props.numOfPages - (displayingPageCount.value - 1), startPage.value + n * displayingPageCount.value)
+  )
 }
 
 function firePageButtonClickEvent(n: number) {
   console.log(`ページ番号: ${n}`)
   emit('pageClick', n)
 }
-
 </script>
 
 <template>
   <nav aria-label="Page navigation example">
-    <ul class="flex -space-x-px text-sm items-center justify-center">
+    <ul class="flex items-center justify-center -space-x-px text-sm">
       <li>
-        <button @click="incrementDisplayingPages(-1)" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-s-base text-sm w-10 h-10 focus:outline-none">
+        <button
+          @click="incrementDisplayingPages(-1)"
+          class="text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading rounded-s-base box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
+        >
           <span class="sr-only">Previous</span>
-          <svg class="w-4 h-4 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7"/></svg>
+          <svg
+            class="h-4 w-4 rtl:rotate-180"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m15 19-7-7 7-7"
+            />
+          </svg>
         </button>
       </li>
       <li v-for="page in displayingPages" :key="page">
-        <button v-if="page === props.page" aria-current="page" class="flex items-center justify-center text-fg-brand bg-neutral-tertiary-medium box-border border border-default-medium hover:text-fg-brand font-medium text-sm w-10 h-10 focus:outline-none">{{ page }}</button>
-        <button v-else @click="firePageButtonClickEvent(page)" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium text-sm w-10 h-10 focus:outline-none">{{ page }}</button>
+        <button
+          v-if="page === props.page"
+          aria-current="page"
+          class="text-fg-brand bg-neutral-tertiary-medium border-default-medium hover:text-fg-brand box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
+        >
+          {{ page }}
+        </button>
+        <button
+          v-else
+          @click="firePageButtonClickEvent(page)"
+          class="text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
+        >
+          {{ page }}
+        </button>
       </li>
-      <button @click="incrementDisplayingPages(1)" class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-e-base text-sm w-10 h-10 focus:outline-none">
+      <button
+        @click="incrementDisplayingPages(1)"
+        class="text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading rounded-e-base box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
+      >
         <span class="sr-only">Next</span>
-        <svg class="w-4 h-4 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/></svg>
+        <svg
+          class="h-4 w-4 rtl:rotate-180"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="m9 5 7 7-7 7"
+          />
+        </svg>
       </button>
     </ul>
   </nav>
