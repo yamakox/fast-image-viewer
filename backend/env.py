@@ -17,5 +17,5 @@ CORS_ALLOWED_ORIGINS = [x for x in os.environ.get('CORS_ALLOWED_ORIGINS', 'http:
 # fast-image-viewer
 FIV_APPDATA_FOLDER_PATH = os.environ.get('FIV_APPDATA_FOLDER_PATH', '/var/opt/fast-image-viewer')
 FIV_DATASET_FOLDER_PATH = os.environ.get('FIV_DATASET_FOLDER_PATH', '/var/opt/fast-image-viewer/dataset')
-FIV_THUMBNAIL_SIZE = int(os.environ.get('FIV_THUMBNAIL_SIZE', '100'))
-FIV_THUMBNAIL_QUALITY = int(os.environ.get('FIV_THUMBNAIL_QUALITY', '70'))
+FIV_THUMBNAIL_SIZE = int(os.environ.get('FIV_THUMBNAIL_SIZE', '96'))
+FIV_THUMBNAIL_QUALITY = int(os.environ.get('FIV_THUMBNAIL_QUALITY', '60'))
