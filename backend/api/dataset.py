@@ -23,6 +23,8 @@ class Hdf5File:
 
     def __init__(self, folder_path: Path, mode='r'):
         path = folder_path / settings.API_THUMBNAIL_FILENAME
+        if mode == 'r' and not path.exists():
+            return
         self.h5 = h5py.File(path, mode)
         self.group = (
             self.h5[API_THUMBNAIL_GROUP]
@@ -46,26 +48,29 @@ class Hdf5File:
             pass
 
     def set_data(self, id: int, data: bytes) -> None:
-        if not self.group:
-            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
+        self.__check_opened()
         name = str(id)
         if name in self.group:
             raise Exception(f'{id=} already exists in {settings.API_THUMBNAIL_FILENAME}')
         self.group.create_dataset(name, data=np.asarray(data))
 
     def get_data(self, id: int) -> bytes:
-        if not self.group:
-            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
+        self.__check_opened()
         name = str(id)
         if name not in self.group:
             raise Exception(f'{id=} not found in {settings.API_THUMBNAIL_FILENAME}')
         return np.asarray(self.group[name]).tobytes()
 
     def has_data(self, id: int) -> bool:
-        if not self.group:
-            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
+        self.__check_opened()
         name = str(id)
         return name in self.group
+
+    def __check_opened(self):
+        if not self.h5:
+            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} file is not found.')
+        if not self.group:
+            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
 
 
 # 画像ファイルのサムネイルとデータの作成
