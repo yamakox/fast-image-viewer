@@ -8,7 +8,7 @@
         <folder-icon class="shrink-0" />
         <span class="ms-1 min-w-0 truncate" :title="props.name">{{ props.name }}</span>
       </div>
-      <div class="flex items-center justify-end gap-1">
+      <div class="flex items-center justify-end gap-0.5">
         <img
           v-for="thumbnail in thumbnails?.results ?? []"
           :key="thumbnail.id"
@@ -27,12 +27,15 @@ import type { ImageListPage } from '../types'
 import { getData, getThumbnailUrl } from '../util'
 import { onMounted, ref, type Ref } from 'vue'
 
-interface FolderMenuItemProps {
-  id: number
-  name: string
+interface Props {
+  id?: number
+  name?: string
 }
 
-const props = defineProps<FolderMenuItemProps>()
+const props = withDefaults(defineProps<Props>(), {
+  id: undefined,
+  name: undefined,
+})
 
 const thumbnails: Ref<ImageListPage | null> = ref(null)
 async function fetchThumbnails() {

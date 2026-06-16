@@ -16,7 +16,11 @@ npm create vite@latest
 mv fast-image-viewer/ frontend
 ```
 
+[`.env`](https://ja.vite.dev/guide/env-and-mode)はAPIのBASE URL設定に使用する。
+
 ### プロジェクトのセットアップ
+
+[レスポンシブデザイン](https://tailwindcss.com/docs/responsive-design)はTailwind CSSを使う。
 
 ```bash
 cd frontend
@@ -25,12 +29,13 @@ npm i tailwindcss @tailwindcss/vite
 ```
 
 サイドバー用に[*Flowbite*](https://flowbite.com/docs/getting-started/vue/)をインストールする。
+[アイコン](https://flowbite.com/icons/)もFlowbiteを使用している。
 
 ```bash
 npm i flowbite
 ```
 
-サブフォルダー表示用に[*Vue Router*](https://router.vuejs.org/guide/essentials/dynamic-matching.html)をインストールする。
+~~サブフォルダー表示用~~クエリーパラメータ取得用に[*Vue Router*](https://router.vuejs.org/guide/essentials/dynamic-matching.html)をインストールする。
 
 ```bash
 npm i vue-router

@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import FolderOpenIcon from '../components/FolderOpenIcon.vue'
 import AngleLeftIcon from '../components/AngleLeftIcon.vue'
-import { onMounted, computed, ref, type Ref, type ComputedRef } from 'vue'
-import { useRoute } from 'vue-router'
+import { watch, computed, ref, type Ref, type ComputedRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getData, getThumbnailUrl, getImageUrl } from '../util'
 import type { Folder, FolderListItem, ImageListPage } from '../types'
 import FolderMenuItem from '../components/FolderMenuItem.vue'
+import Pagination from '../components/Pagination.vue'
 
+// Vue Router
 const route = useRoute()
+const router = useRouter()
 
+// ref変数
 const currentFolder: Ref<Folder | null> = ref(null)
 const linkToParent: ComputedRef<string | null> = computed(() => {
   if (currentFolder.value?.id === null) {
@@ -18,15 +22,18 @@ const linkToParent: ComputedRef<string | null> = computed(() => {
 })
 const folders: Ref<FolderListItem[]> = ref([])
 const thumbnails: Ref<ImageListPage | null> = ref(null)
+const page: Ref<number> = ref(1)
+const numOfPages: Ref<number> = ref(1)
 
-interface MainPageQuery {
+// 型定義
+interface FoldersQuery {
   parent?: string
   rootonly?: string
   page?: string
   favoriteonly?: string
 }
 
-onMounted(async () => {
+async function loadPageData() {
   console.log('route.query:', route.query)
 
   // 現在のフォルダーの取得
@@ -36,8 +43,7 @@ onMounted(async () => {
       location.href = '/'
       return
     }
-  }
-  if (currentFolder.value === null) {
+  } else {
     currentFolder.value = {
       id: null,
       name: 'Fast Image Viewer',
@@ -47,7 +53,7 @@ onMounted(async () => {
   }
 
   // サブフォルダーの取得
-  const params: MainPageQuery = route.query.parent ? { parent: route.query.parent as string } : { rootonly: 'yes' }
+  const params: FoldersQuery = route.query.parent ? { parent: route.query.parent as string } : { rootonly: 'yes' }
   folders.value = ((await getData('/api/v1/folders', params)) as FolderListItem[]) ?? []
 
   // サムネイルの取得
@@ -55,7 +61,22 @@ onMounted(async () => {
     params.page = route.query.page as string
   }
   thumbnails.value = (await getData('/api/v1/images', params)) as ImageListPage | null
-})
+  page.value = thumbnails.value?.page ?? 1
+  numOfPages.value = thumbnails.value?.num_pages ?? 1
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    loadPageData()
+  },
+  { immediate: true },
+)
+
+// ページネーションのクリックイベントの処理
+function handlePageClick(page: number) {
+  router.push({ query: { ...route.query, page: page.toString() } })
+}
 </script>
 
 <template>
@@ -74,7 +95,7 @@ onMounted(async () => {
             >
               <angle-left-icon />
             </a>
-            <button
+            <button v-if="folders.length > 0"
               data-drawer-target="main-sidebar"
               data-drawer-toggle="main-sidebar"
               aria-controls="main-sidebar"
@@ -110,7 +131,7 @@ onMounted(async () => {
     <!-- Sidebar -->
     <aside
       id="main-sidebar"
-      class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 -translate-x-full border-e pt-14 transition-transform md:translate-x-0 md:pt-0"
+      class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 transition-transform -translate-x-full border-e pt-14 md:translate-x-0 md:pt-0"
       aria-label="Sidebar"
     >
       <div class="h-full overflow-y-auto px-3 py-0">
@@ -142,19 +163,27 @@ onMounted(async () => {
       </div>
     </aside>
 
-    <!-- サムネイル -->
-    <div class="mt-14 ml-0 md:mt-0 md:ml-64 flex flex-wrap items-center justify-center gap-2 p-4">
-      <a
-        v-for="thumbnail in thumbnails?.results ?? []"
-        :key="thumbnail.id"
-        :href="getImageUrl(thumbnail.id)"
-        target="_blank"
-      >
-        <img :src="getThumbnailUrl(thumbnail.id)" :alt="thumbnail.name" class="rounded-base" />
-      </a>
-    </div>
+    <div class="mt-14 ml-0 md:mt-0 md:ml-64 flex flex-col items-center justify-start">
+      <!-- サムネイル -->
+      <div class="flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 py-4 px-1">
+        <a
+          v-for="thumbnail in thumbnails?.results ?? []"
+          :key="thumbnail.id"
+          :href="getImageUrl(thumbnail.id)"
+          target="_blank"
+        >
+          <img :src="getThumbnailUrl(thumbnail.id)" :alt="thumbnail.name" class="w-12 h-12 sm:rounded-base sm:w-24 sm:h-24" />
+        </a>
+      </div>
 
-    <!-- ページネーション -->
+      <!-- フォルダー内の画像の総数 -->
+      <div class="text-body text-sm font-light text-center">
+        {{ thumbnails?.count }} images
+      </div>
+
+      <!-- ページネーション -->
+      <pagination :page="page" :numOfPages="numOfPages" @page-click="handlePageClick" class="m-0 py-4" />
+    </div>
   </div>
 </template>
 
