@@ -51,6 +51,8 @@ const WHEEL_ZOOM_STEP = 0.1
 const imageScale: Ref<number> = ref(1)
 const translateX: Ref<number> = ref(0)
 const translateY: Ref<number> = ref(0)
+const imageStageRef: Ref<HTMLElement | null> = ref(null)
+const imageRef: Ref<HTMLImageElement | null> = ref(null)
 const imageTransformStyle = computed(() => ({
   transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${imageScale.value})`,
 }))
@@ -97,6 +99,43 @@ function resetImageTransform() {
   isTouchPanning = false
   isPinching = false
   hasPointerMoved = false
+}
+
+function calculateCoverScale(image: HTMLImageElement, stage: HTMLElement): number | null {
+  const { naturalWidth, naturalHeight } = image
+  if (naturalWidth === 0 || naturalHeight === 0) {
+    return null
+  }
+  const stageWidth = stage.clientWidth
+  const stageHeight = stage.clientHeight
+  const containScale = Math.min(stageWidth / naturalWidth, stageHeight / naturalHeight)
+  const containWidth = naturalWidth * containScale
+  const containHeight = naturalHeight * containScale
+  return Math.max(stageWidth / containWidth, stageHeight / containHeight)
+}
+
+function toggleImageZoom() {
+  if (imageScale.value > MIN_SCALE) {
+    imageScale.value = MIN_SCALE
+    translateX.value = 0
+    translateY.value = 0
+    return
+  }
+
+  const image = imageRef.value
+  const stage = imageStageRef.value
+  if (image === null || stage === null) {
+    return
+  }
+
+  const coverScale = calculateCoverScale(image, stage)
+  if (coverScale === null) {
+    return
+  }
+
+  imageScale.value = clampScale(coverScale)
+  translateX.value = 0
+  translateY.value = 0
 }
 
 function getTouchDistance(touches: TouchList): number {
@@ -258,6 +297,7 @@ onUnmounted(() => {
   <div class="image-viewer">
     <!-- 画像 -->
     <div
+      ref="imageStageRef"
       class="image-stage"
       :class="{ 'image-stage--draggable': imageScale > MIN_SCALE }"
       @wheel.prevent.stop="handleWheel"
@@ -272,6 +312,7 @@ onUnmounted(() => {
       @click.stop="handleStageClick"
     >
       <img
+        ref="imageRef"
         :src="imageUrl"
         :alt="imageName"
         class="image-content z-10"
@@ -281,8 +322,46 @@ onUnmounted(() => {
     </div>
 
     <!-- 上部ナビゲーション -->
-    <nav v-if="navbarVisible" class="fixed top-0 z-50 flex w-full items-center justify-end bg-transparent p-4">
-      <button class="text-heading text-center text-sm leading-5 font-medium" @click.stop="fireCloseEvent">
+    <nav v-if="navbarVisible" class="fixed top-0 z-50 flex w-full items-center justify-start bg-black/20 p-4">
+      <button class="text-heading text-center text-sm leading-5 font-medium" @click.stop="toggleImageZoom">
+        <svg
+          v-if="imageScale === MIN_SCALE"
+          class="h-9 w-9 text-gray-800 dark:text-white"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke="white"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8 4H4m0 0v4m0-4 5 5m7-5h4m0 0v4m0-4-5 5M8 20H4m0 0v-4m0 4 5-5m7 5h4m0 0v-4m0 4-5-5"
+          />
+        </svg>
+        <svg
+          v-else
+          class="h-9 w-9 text-gray-800 dark:text-white"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke="white"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 9h4m0 0V5m0 4L4 4m15 5h-4m0 0V5m0 4 5-5M5 15h4m0 0v4m0-4-5 5m15-5h-4m0 0v4m0-4 5 5"
+          />
+        </svg>
+      </button>
+      <button class="text-heading ms-auto text-center text-sm leading-5 font-medium" @click.stop="fireCloseEvent">
         <svg
           class="h-9 w-9 text-gray-800 dark:text-white"
           aria-hidden="true"
@@ -304,7 +383,7 @@ onUnmounted(() => {
     </nav>
 
     <!-- 下部ナビゲーション -->
-    <nav v-if="navbarVisible" class="fixed bottom-0 z-50 flex w-full items-center justify-between bg-transparent p-4">
+    <nav v-if="navbarVisible" class="fixed bottom-0 z-50 flex w-full items-center justify-between bg-black/20 p-4">
       <button @click.stop="incrementImageIndex(-1)" class="text-heading text-center text-sm leading-5 font-medium">
         <svg
           class="h-9 w-9"

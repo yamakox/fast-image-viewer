@@ -42,7 +42,7 @@
       "command": "uv run manage.py shell"
     },
     {
-      "label": "T021: 本番モードでbackend起動",
+      "label": "T021: backend起動 (本番モード)",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}/backend",
@@ -54,7 +54,7 @@
       "command": "uv run main.py"
     },
     {
-      "label": "T022: デバッグモードでbackend起動",
+      "label": "T022: backend起動 (デバッグモード)",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}/backend"
