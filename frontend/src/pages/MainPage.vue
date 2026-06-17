@@ -26,6 +26,7 @@ const thumbnails: Ref<ImageListPage | null> = ref(null)
 const page: Ref<number> = ref(1)
 const numOfPages: Ref<number> = ref(1)
 const thumbnailIndex: Ref<number | null> = ref(null)
+const favoriteOnly: Ref<boolean> = ref(false)
 
 // 型定義
 interface FoldersQuery {
@@ -55,7 +56,10 @@ async function loadPageData() {
   }
 
   // サブフォルダーの取得
-  const params: FoldersQuery = route.query.parent ? { parent: route.query.parent as string } : { rootonly: 'yes' }
+  const params: FoldersQuery = { ...route.query }
+  if (!route.query.parent) {
+    params.rootonly = 'yes'
+  }
   folders.value = ((await getData('/api/v1/folders', params)) as FolderListItem[]) ?? []
 
   // サムネイルの取得
@@ -74,6 +78,10 @@ watch(
   },
   { immediate: true }
 )
+
+function handleFavoriteOnlyChange() {
+  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined } })
+}
 
 // ページネーションのクリックイベントの処理
 function handlePageClick(page: number) {
@@ -139,8 +147,8 @@ function handlePageClick(page: number) {
     >
       <div class="h-full overflow-y-auto px-3 py-0">
         <!-- 現在のフォルダー -->
-        <ul class="border-default m-0 hidden space-y-2 border-b py-2 font-light md:block">
-          <li>
+        <ul class="border-default m-0 space-y-2 border-b py-2 font-light">
+          <li class="hidden md:block">
             <div class="text-heading rounded-base group flex min-w-0 items-center px-2 py-1.5">
               <a v-if="linkToParent" :href="linkToParent" class="flex items-center justify-start">
                 <div class="text-heading shrink-0 pr-1 text-center text-sm font-medium">
@@ -154,6 +162,15 @@ function handlePageClick(page: number) {
                 <span class="ms-1 min-w-0 truncate" :title="currentFolder?.name">{{ currentFolder?.name }}</span>
               </div>
             </div>
+          </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input type="checkbox" v-model="favoriteOnly" @change="handleFavoriteOnlyChange" class="peer sr-only" />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">♥だけ表示</span>
+            </label>
           </li>
         </ul>
 
