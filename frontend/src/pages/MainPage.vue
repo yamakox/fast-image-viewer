@@ -171,12 +171,36 @@ function handlePageClick(page: number) {
       <div
         class="grid w-full grid-cols-[repeat(auto-fit,4.5rem)] justify-center gap-0.5 px-1 py-4 sm:grid-cols-[repeat(auto-fit,6rem)] sm:gap-1"
       >
-        <a v-for="(thumbnail, index) in thumbnails?.results ?? []" :key="index" @click="thumbnailIndex = index">
+        <a
+          v-for="(thumbnail, index) in thumbnails?.results ?? []"
+          :key="index"
+          class="relative inline-block"
+          @click="thumbnailIndex = index"
+        >
           <img
             :src="getThumbnailUrl(thumbnail.id)"
             :alt="thumbnail.name"
             class="sm:rounded-base h-18 w-18 sm:h-24 sm:w-24"
           />
+          <svg
+            v-if="thumbnail.favorite"
+            class="absolute right-0 bottom-0 h-6 w-6 text-white"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="black"
+              fill="white"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1"
+              d="M12.01 6.001C6.5 1 1 8 5.782 13.001L12.011 20l6.23-7C23 8 17.5 1 12.01 6.002Z"
+            />
+          </svg>
         </a>
       </div>
 
