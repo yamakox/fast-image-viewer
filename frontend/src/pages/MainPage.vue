@@ -166,7 +166,7 @@ function handlePageClick(page: number) {
             <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
               <input type="checkbox" v-model="favoriteOnly" @change="handleFavoriteOnlyChange" class="peer sr-only" />
               <div
-                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
               ></div>
               <span class="text-heading ms-3 text-sm font-medium select-none">♥だけ表示</span>
             </label>

@@ -6,6 +6,6 @@ COPY "./backend/" "./"
 RUN uv sync --no-dev
 
 ENV STATIC_ROOT="/usr/share/nginx/html/static/"
-RUN uv run manage.py collectstatic
+RUN uv run --no-dev manage.py collectstatic
 
 CMD ["uv", "run", "main.py"]

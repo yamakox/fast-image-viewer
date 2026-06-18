@@ -17,7 +17,7 @@ services:
       FIV_APPDATA_FOLDER_PATH: "/var/appdata"
       FIV_DATASET_FOLDER_PATH: "/var/dataset"
       FIV_THUMBNAIL_SIZE: "96"
-      FIV_THUMBNAIL_QUALITY: "40"
+      FIV_THUMBNAIL_QUALITY: "60"
     volumes:
       - appdata:/var/appdata
       - ${DATASET_PATH:?The environment variable DATASET_PATH is not set}:/var/dataset
