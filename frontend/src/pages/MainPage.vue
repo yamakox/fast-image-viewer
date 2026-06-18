@@ -106,7 +106,6 @@ function handlePageClick(page: number) {
               <angle-left-icon />
             </a>
             <button
-              v-if="folders.length > 0"
               data-drawer-target="main-sidebar"
               data-drawer-toggle="main-sidebar"
               aria-controls="main-sidebar"

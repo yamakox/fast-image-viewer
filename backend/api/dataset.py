@@ -104,6 +104,8 @@ def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder | N
 
 # データセット(サブ)フォルダー内のスキャン
 def _scan_dataset_folder(hdf5file: Hdf5File, parent_path: Path, root_path: Path, parent: models.Folder | None) -> None:
+    logger.info(f'scan {parent_path}...')
+
     for i in parent_path.glob('*'):
         if i.is_dir():
             try:
