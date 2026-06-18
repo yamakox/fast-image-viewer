@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from dateutil.tz import tzlocal
 from PIL import Image
+from PIL import ImageFile
 import imagehash
 import h5py
 import io
@@ -73,6 +74,17 @@ class Hdf5File:
             raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
 
 
+# 非RGBデータをRGBに変換する
+def _to_rgb(img: ImageFile.ImageFile) -> ImageFile.ImageFile | Image.Image:
+    if img.mode == 'RGB':
+        return img
+    buf = Image.new('RGBA', img.size, (0, 0, 0))
+    buf.paste(img)
+    frame = Image.new('RGB', img.size, (0, 0, 0))
+    frame.paste(buf, mask=buf.split()[3])
+    return frame
+
+
 # 画像ファイルのサムネイルとデータの作成
 def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder | None) -> None:
     try:
@@ -88,7 +100,7 @@ def _create_image_data(hdf5file: Hdf5File, path: Path, parent: models.Folder | N
             img = img.crop(((w - h) // 2, 0, (w + h) // 2, h))
         img = img.resize((env.FIV_THUMBNAIL_SIZE, env.FIV_THUMBNAIL_SIZE), Image.LANCZOS)
         with io.BytesIO() as output:
-            img.save(output, format='JPEG', quality=env.FIV_THUMBNAIL_QUALITY)
+            _to_rgb(img).save(output, format='JPEG', quality=env.FIV_THUMBNAIL_QUALITY)
             jpeg_data = output.getvalue()
         image = models.Image(
             name=path.name,
