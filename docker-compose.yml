@@ -1,0 +1,40 @@
+services:
+  app:
+    image: fast-image-viewer-app
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    restart: always
+    environment:
+      DEBUG: "False"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      WORKERS: "16"
+      ALLOWED_HOSTS: "localhost;127.0.0.1;${HOST:?The environment variable HOST is not set}"
+      STATIC_ROOT: "/usr/share/nginx/html/static/"
+      PAGINATION_SIZE: "100"
+      CORS_ALLOWED_ORIGINS: "${PROTOCOL:-https}://${HOST:?The environment variable HOST is not set}:${PORT_WEB:-80}"
+      FIV_APPDATA_FOLDER_PATH: "/var/appdata"
+      FIV_DATASET_FOLDER_PATH: "/var/dataset"
+      FIV_THUMBNAIL_SIZE: "96"
+      FIV_THUMBNAIL_QUALITY: "60"
+    volumes:
+      - appdata:/var/appdata
+      - ${DATASET_PATH:?The environment variable DATASET_PATH is not set}:/var/dataset
+
+  web:
+    image: fast-image-viewer-web
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+      args:
+        VITE_API_BASE_URL: "${PROTOCOL:-http}://${HOST:?The environment variable HOST is not set}:${PORT_API:-8000}"
+    restart: always
+    ports:
+      - ${PORT_WEB:-80}:80
+      - ${PORT_API:-8000}:8000
+    depends_on:
+      - app
+
+volumes:
+  appdata:
