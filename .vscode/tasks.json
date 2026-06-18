@@ -108,6 +108,54 @@
         "cwd": "${workspaceFolder}/frontend"
       },
       "command": "npm run build"
+    },
+    {
+      "label": "T041: Dockerコンテナイメージのビルド",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "docker compose build"
+    },
+    {
+      "label": "T042: Dockerコンテナイメージの削除",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "docker compose down --volumes --rmi all"
+    },
+    {
+      "label": "T043: Dockerコンテナのデータベースマイグレーション",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "docker compose run -i --rm app uv run manage.py migrate"
+    },
+    {
+      "label": "T044: Dockerコンテナのデータセットスキャン",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "docker compose run -i --rm app uv run manage.py scan_dataset"
+    },
+    {
+      "label": "T045: Dockerコンテナの起動",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "docker compose up -d"
+    },
+    {
+      "label": "T046: Dockerコンテナの停止",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "docker compose down"
     }
   ]
 }

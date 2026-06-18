@@ -23,6 +23,7 @@ root_path = Path(env.FIV_DATASET_FOLDER_PATH).resolve()
 appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
 
 # hdf5file = dataset.Hdf5File(appdata_path)
+hdf5file = None
 
 
 def _make_400_response(**kwargs) -> JsonResponse:
@@ -143,7 +144,9 @@ class ImageViewSet(viewsets.ModelViewSet):
     def thumbnail(self, request, pk=None):
         logger.debug(f'image: {pk=} {request=}')
         try:
-            hdf5file = dataset.Hdf5File(appdata_path)
+            global hdf5file
+            if hdf5file is None:
+                hdf5file = dataset.Hdf5File(appdata_path)
             if not hdf5file.has_data(pk):
                 return _make_404_response(detail='Thumbnail image not found.')
             bindata = hdf5file.get_data(pk)
