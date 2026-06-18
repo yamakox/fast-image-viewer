@@ -44,16 +44,24 @@ docker compose run -i --rm app uv run manage.py migrate
 docker compose run -i --rm app uv run manage.py scan_dataset
 ```
 
-### サービスの起動
+### アプリの起動
 
 ```bash
 docker compose up -d
 ```
 
-### サービスの起動
+### アプリの停止
 
 ```bash
 docker compose down
+```
+
+### データベース・サムネイルの削除
+
+アプリの停止後、以下のコマンドを実行してください。
+
+```bash
+docker volume rm fast-image-viewer_appdata
 ```
 
 ## 各フォルダーの説明
