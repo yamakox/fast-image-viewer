@@ -1,0 +1,19 @@
+{
+  "name": "Fast Image Viewer",
+  "short_name": "Fast Image",
+  "display": "browser",
+  "background_color": "white",
+  "theme_color": "white",
+  "icons": [
+    {
+      "src": "favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
