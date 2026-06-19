@@ -136,6 +136,18 @@ watch(imageRef, (newVal) => {
     smoothScroll: true,
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
+    zoomDoubleClickSpeed: 1, // ダブルクリックによるズームを無効にする
+    beforeMouseDown: (e) => {
+      // ナビゲーションボタンをクリックした場合はtrueを返して、preventDefaultを行わないようにする。
+      return e.target instanceof Element && e.target.closest('.nav-button')
+    },
+    onTouch: (e) => {
+      // ナビゲーションボタンをタッチした場合はfalseを返して、preventDefaultを行わないようにする。
+      return !(e.target instanceof Element && e.target.closest('.nav-button'))
+    },
+    onClick: () => {
+      navbarVisible.value = !navbarVisible.value
+    },
   })
   panzoomInstance.on('zoom', () => {
     const transform = panzoomInstance?.getTransform()
@@ -166,14 +178,17 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="imageViewerRef" class="image-viewer" @click.stop="navbarVisible = !navbarVisible">
+  <div ref="imageViewerRef" class="image-viewer">
     <!-- 画像 -->
-    <img ref="imageRef" :src="imageUrl" :alt="imageName" class="image-content" />
+    <img ref="imageRef" :src="imageUrl" :alt="imageName" class="image-content z-10" />
 
     <!-- 上部ナビゲーション -->
-    <nav v-if="navbarVisible" class="fixed top-0 left-0 right-0 flex w-full items-center justify-between bg-black/20 p-4">
+    <nav
+      v-if="navbarVisible"
+      class="fixed top-0 right-0 left-0 z-20 flex w-full items-center justify-between bg-black/20"
+    >
       <button
-        class="nav-button text-heading text-center text-sm leading-5 font-medium"
+        class="nav-button text-heading p-4 text-center text-sm leading-5 font-medium"
         @click.stop="toggleImageZoom()"
       >
         <svg
@@ -214,7 +229,10 @@ onUnmounted(() => {
         </svg>
       </button>
       <div class="truncate text-center leading-5 font-medium text-white">{{ imageName }}</div>
-      <button class="nav-button text-heading text-center text-sm leading-5 font-medium" @click.stop="fireCloseEvent">
+      <button
+        class="nav-button text-heading p-4 text-center text-sm leading-5 font-medium"
+        @click.stop="fireCloseEvent"
+      >
         <svg
           class="h-9 w-9 text-gray-800 dark:text-white"
           aria-hidden="true"
@@ -236,9 +254,10 @@ onUnmounted(() => {
     </nav>
 
     <!-- 中央ナビゲーション -->
-    <button v-if="navbarVisible"
+    <button
+      v-if="navbarVisible"
       @click.stop="incrementImageIndex(-1)"
-      class="fixed top-1/2 left-0 text-heading bg-black/20 p-4 text-center text-sm leading-5 font-medium"
+      class="nav-button text-heading fixed top-1/2 left-0 z-20 bg-black/20 p-4 text-center text-sm leading-5 font-medium"
     >
       <svg
         class="h-9 w-9"
@@ -252,9 +271,10 @@ onUnmounted(() => {
         <path stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7" />
       </svg>
     </button>
-    <button v-if="navbarVisible"
+    <button
+      v-if="navbarVisible"
       @click.stop="incrementImageIndex(1)"
-      class="fixed top-1/2 right-0 text-heading bg-black/20 p-4 text-center text-sm leading-5 font-medium"
+      class="nav-button text-heading fixed top-1/2 right-0 z-20 bg-black/20 p-4 text-center text-sm leading-5 font-medium"
     >
       <svg
         class="h-9 w-9 text-gray-800 dark:text-white"
@@ -270,10 +290,13 @@ onUnmounted(() => {
     </button>
 
     <!-- 下部ナビゲーション -->
-    <nav v-if="navbarVisible"class="fixed bottom-0 left-0 right-0 flex w-full items-center justify-between bg-black/20 p-4">
+    <nav
+      v-if="navbarVisible"
+      class="fixed right-0 bottom-0 left-0 z-20 flex w-full items-center justify-between bg-black/20"
+    >
       <button
         @click.stop="toggleFavorite"
-        class="nav-button text-heading ms-auto me-auto text-center text-sm leading-5 font-medium"
+        class="nav-button text-heading ms-auto p-4 text-center text-sm leading-5 font-medium"
       >
         <svg
           v-if="imageFavorite"
