@@ -22,8 +22,8 @@ const DISPLAYINGPAGECOUNT_DELTA: number = 2
 const MAX_DISPLAYINGPAGECOUNT: number = DISPLAYINGPAGECOUNT_DELTA * 2 + 1
 
 // ref変数
-const startPage: Ref<number> = ref(Math.max(1, props.page - DISPLAYINGPAGECOUNT_DELTA))
 const displayingPageCount: ComputedRef<number> = computed(() => Math.min(MAX_DISPLAYINGPAGECOUNT, props.numOfPages))
+const startPage: ComputedRef<number> = computed(() => Math.max(1, Math.min(props.numOfPages - (displayingPageCount.value - 1), props.page - DISPLAYINGPAGECOUNT_DELTA)))
 const displayingPages: ComputedRef<number[]> = computed(() => {
   const pages: number[] = []
   for (let i = 0; i < displayingPageCount.value; i++) {
@@ -33,14 +33,19 @@ const displayingPages: ComputedRef<number[]> = computed(() => {
 })
 
 // サブルーチン
+/* 未使用のためコメントアウト
 function incrementDisplayingPages(n: number) {
   startPage.value = Math.max(
     1,
     Math.min(props.numOfPages - (displayingPageCount.value - 1), startPage.value + n * displayingPageCount.value)
   )
 }
+*/
 
 function firePageButtonClickEvent(n: number) {
+  if (n < 1 || n > props.numOfPages) {
+    return
+  }
   console.log(`ページ番号: ${n}`)
   emit('pageClick', n)
 }
@@ -51,7 +56,7 @@ function firePageButtonClickEvent(n: number) {
     <ul class="flex items-center justify-center -space-x-px text-sm">
       <li>
         <button
-          @click="incrementDisplayingPages(-1)"
+          @click="firePageButtonClickEvent(props.page - 1)"
           class="text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading rounded-s-base box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
         >
           <span class="sr-only">Previous</span>
@@ -91,7 +96,7 @@ function firePageButtonClickEvent(n: number) {
         </button>
       </li>
       <button
-        @click="incrementDisplayingPages(1)"
+        @click="firePageButtonClickEvent(props.page + 1)"
         class="text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading rounded-e-base box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
       >
         <span class="sr-only">Next</span>
