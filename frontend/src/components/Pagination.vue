@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 
 // プロパティ定義
 interface Props {
