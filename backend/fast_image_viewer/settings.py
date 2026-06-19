@@ -159,9 +159,3 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
 }
-
-
-# `api`の設定
-
-# サムネイル画像の保存ファイル名(HDF5形式)
-API_THUMBNAIL_FILENAME = 'thumbnail.hdf5'

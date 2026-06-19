@@ -118,7 +118,7 @@
       "command": "docker compose build"
     },
     {
-      "label": "T042: Dockerコンテナイメージの削除",
+      "label": "T042: Dockerコンテナイメージとアプリデータの削除",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}"

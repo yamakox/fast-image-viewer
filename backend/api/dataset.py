@@ -10,10 +10,10 @@ import h5py
 import io
 import numpy as np
 from . import models
-from fast_image_viewer import settings
 
 
 # 定数
+API_THUMBNAIL_FILENAME = 'thumbnail.hdf5'
 API_THUMBNAIL_GROUP = 'ThumbnailGroup'
 
 
@@ -23,9 +23,7 @@ class Hdf5File:
     group = None
 
     def __init__(self, folder_path: Path, mode='r'):
-        path = folder_path / settings.API_THUMBNAIL_FILENAME
-        if mode == 'r' and not path.exists():
-            return
+        path = folder_path / API_THUMBNAIL_FILENAME
         self.h5 = h5py.File(path, mode)
         self.group = (
             self.h5[API_THUMBNAIL_GROUP]
@@ -49,29 +47,20 @@ class Hdf5File:
             pass
 
     def set_data(self, id: int, data: bytes) -> None:
-        self.__check_opened()
         name = str(id)
         if name in self.group:
-            raise Exception(f'{id=} already exists in {settings.API_THUMBNAIL_FILENAME}')
+            raise Exception(f'{id=} already exists in {API_THUMBNAIL_FILENAME}')
         self.group.create_dataset(name, data=np.asarray(data))
 
     def get_data(self, id: int) -> bytes:
-        self.__check_opened()
         name = str(id)
         if name not in self.group:
-            raise Exception(f'{id=} not found in {settings.API_THUMBNAIL_FILENAME}')
+            raise Exception(f'{id=} not found in {API_THUMBNAIL_FILENAME}')
         return np.asarray(self.group[name]).tobytes()
 
     def has_data(self, id: int) -> bool:
-        self.__check_opened()
         name = str(id)
         return name in self.group
-
-    def __check_opened(self):
-        if not self.h5:
-            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} file is not found.')
-        if not self.group:
-            raise Exception(f'{settings.API_THUMBNAIL_FILENAME} is not prepared.')
 
 
 # 非RGBデータをRGBに変換する
