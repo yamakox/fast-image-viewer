@@ -2,6 +2,7 @@
 import { ref, computed, onUnmounted, type Ref, type ComputedRef, watch } from 'vue'
 import { getImageUrl, patchData } from '../util'
 import type { ImageListItem } from '../types'
+import panzoom, { type PanZoom } from 'panzoom'
 
 // プロパティ定義
 interface Props {
@@ -19,9 +20,16 @@ const emit = defineEmits<{
   close: []
 }>()
 
+// 定数
+const MIN_ZOOM = 1
+const MAX_ZOOM = 5
+
 // ref変数
+const imageViewerRef: Ref<HTMLImageElement | null> = ref(null)
+const imageRef: Ref<HTMLImageElement | null> = ref(null)
 const imageIndex: Ref<number | undefined> = ref(props.index)
 const navbarVisible: Ref<boolean> = ref(true)
+const isZoomed: Ref<boolean> = ref(false)
 const imageUrl: ComputedRef<string> = computed(() => {
   const image = getIndexedImage(imageIndex.value)
   if (image === undefined) {
@@ -44,194 +52,8 @@ const imageFavorite: ComputedRef<string | null> = computed(() => {
   return image.favorite
 })
 
-const MIN_SCALE = 1
-const MAX_SCALE = 5
-const WHEEL_ZOOM_STEP = 0.1
-
-const imageScale: Ref<number> = ref(1)
-const translateX: Ref<number> = ref(0)
-const translateY: Ref<number> = ref(0)
-const imageStageRef: Ref<HTMLElement | null> = ref(null)
-const imageRef: Ref<HTMLImageElement | null> = ref(null)
-const imageTransformStyle = computed(() => ({
-  transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${imageScale.value})`,
-}))
-
-let isPanning = false
-let isTouchPanning = false
-let isPinching = false
-let hasPointerMoved = false
-let panStartX = 0
-let panStartY = 0
-let panOriginX = 0
-let panOriginY = 0
-let pinchStartDistance = 0
-let pinchStartScale = 1
-
-function updatePan(clientX: number, clientY: number) {
-  const dx = clientX - panStartX
-  const dy = clientY - panStartY
-  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-    hasPointerMoved = true
-  }
-  translateX.value = panOriginX + dx
-  translateY.value = panOriginY + dy
-}
-
-function startPan(clientX: number, clientY: number) {
-  panStartX = clientX
-  panStartY = clientY
-  panOriginX = translateX.value
-  panOriginY = translateY.value
-  hasPointerMoved = false
-}
-
-// サブルーチン
-function clampScale(scale: number): number {
-  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale))
-}
-
-function resetImageTransform() {
-  imageScale.value = 1
-  translateX.value = 0
-  translateY.value = 0
-  isPanning = false
-  isTouchPanning = false
-  isPinching = false
-  hasPointerMoved = false
-}
-
-function calculateCoverScale(image: HTMLImageElement, stage: HTMLElement): number | null {
-  const { naturalWidth, naturalHeight } = image
-  if (naturalWidth === 0 || naturalHeight === 0) {
-    return null
-  }
-  const stageWidth = stage.clientWidth
-  const stageHeight = stage.clientHeight
-  const containScale = Math.min(stageWidth / naturalWidth, stageHeight / naturalHeight)
-  const containWidth = naturalWidth * containScale
-  const containHeight = naturalHeight * containScale
-  return Math.max(stageWidth / containWidth, stageHeight / containHeight)
-}
-
-function toggleImageZoom() {
-  if (imageScale.value > MIN_SCALE) {
-    imageScale.value = MIN_SCALE
-    translateX.value = 0
-    translateY.value = 0
-    return
-  }
-
-  const image = imageRef.value
-  const stage = imageStageRef.value
-  if (image === null || stage === null) {
-    return
-  }
-
-  const coverScale = calculateCoverScale(image, stage)
-  if (coverScale === null) {
-    return
-  }
-
-  imageScale.value = clampScale(coverScale)
-  translateX.value = 0
-  translateY.value = 0
-}
-
-function getTouchDistance(touches: TouchList): number {
-  const dx = touches[0].clientX - touches[1].clientX
-  const dy = touches[0].clientY - touches[1].clientY
-  return Math.hypot(dx, dy)
-}
-
-function handleWheel(event: WheelEvent) {
-  const nextScale = clampScale(imageScale.value + (event.deltaY < 0 ? WHEEL_ZOOM_STEP : -WHEEL_ZOOM_STEP))
-  imageScale.value = nextScale
-  if (nextScale === MIN_SCALE) {
-    translateX.value = 0
-    translateY.value = 0
-  }
-}
-
-function handlePointerMove(event: PointerEvent) {
-  if (!isPanning) {
-    return
-  }
-  event.preventDefault()
-  updatePan(event.clientX, event.clientY)
-}
-
-function stopPanning(event: PointerEvent) {
-  if (!isPanning) {
-    return
-  }
-  isPanning = false
-  const target = event.currentTarget
-  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
-    target.releasePointerCapture(event.pointerId)
-  }
-}
-
-function handlePointerDown(event: PointerEvent) {
-  if (isPinching || imageScale.value <= MIN_SCALE || event.button !== 0 || event.pointerType === 'touch') {
-    return
-  }
-  isPanning = true
-  startPan(event.clientX, event.clientY)
-  const target = event.currentTarget
-  if (target instanceof HTMLElement) {
-    target.setPointerCapture(event.pointerId)
-  }
-}
-
-function handleTouchStart(event: TouchEvent) {
-  if (event.touches.length === 2) {
-    isTouchPanning = false
-    isPinching = true
-    hasPointerMoved = true
-    pinchStartDistance = getTouchDistance(event.touches)
-    pinchStartScale = imageScale.value
-    return
-  }
-  if (event.touches.length === 1 && imageScale.value > MIN_SCALE) {
-    isTouchPanning = true
-    startPan(event.touches[0].clientX, event.touches[0].clientY)
-  }
-}
-
-function handleTouchMove(event: TouchEvent) {
-  if (isPinching && event.touches.length === 2) {
-    event.preventDefault()
-    const nextScale = clampScale(pinchStartScale * (getTouchDistance(event.touches) / pinchStartDistance))
-    imageScale.value = nextScale
-    if (nextScale === MIN_SCALE) {
-      translateX.value = 0
-      translateY.value = 0
-    }
-    return
-  }
-  if (isTouchPanning && event.touches.length === 1 && imageScale.value > MIN_SCALE) {
-    event.preventDefault()
-    updatePan(event.touches[0].clientX, event.touches[0].clientY)
-  }
-}
-
-function handleTouchEnd(event: TouchEvent) {
-  if (event.touches.length < 2) {
-    isPinching = false
-  }
-  if (event.touches.length === 0) {
-    isTouchPanning = false
-  }
-}
-
-function handleStageClick() {
-  if (hasPointerMoved) {
-    hasPointerMoved = false
-    return
-  }
-  navbarVisible.value = !navbarVisible.value
-}
+// グローバル変数
+let panzoomInstance: PanZoom | null = null
 
 // サブルーチン
 function fireCloseEvent() {
@@ -274,59 +96,92 @@ async function toggleFavorite() {
   }
 }
 
-watch(
-  () => props.index,
-  () => {
-    navbarVisible.value = true
-    resetImageTransform()
+function toggleImageZoom() {
+  if (panzoomInstance === null) {
+    return
   }
-)
+  const transform = panzoomInstance.getTransform()
+  console.log('toggleImageZoom', transform.scale)
+  const pw = imageViewerRef.value?.clientWidth
+  const ph = imageViewerRef.value?.clientHeight
+  const iw = imageRef.value?.naturalWidth
+  const ih = imageRef.value?.naturalHeight
+  if (pw === undefined || ph === undefined || iw === undefined || ih === undefined) {
+    return
+  }
+  console.log(`pw: ${pw}, ph: ${ph}, iw: ${iw}, ih: ${ih}`)
+  if (transform.scale <= MIN_ZOOM) {
+    const rw = pw / iw
+    const rh = ph / ih
+    if (rw > rh) {
+      panzoomInstance.smoothZoom(pw / 2, ph / 2, rw / rh)
+    } else {
+      panzoomInstance.smoothZoom(pw / 2, ph / 2, rh / rw)
+    }
+  } else {
+    // NOTE: 第3パラメータは現在のscaleに対してのズーム倍率になるため、
+    //       scaleを1に戻すときは逆数を指定する。
+    //       minZoomが1、maxZoomが5のため、maxZoomの逆数をかければよい。
+    panzoomInstance.smoothZoom(pw / 2, ph / 2, 1.0 / MAX_ZOOM)
+  }
+}
+
+watch(imageRef, (newVal) => {
+  if (newVal === null) {
+    return
+  }
+  panzoomInstance = panzoom(newVal, {
+    bounds: true,
+    boundsPadding: 1,
+    smoothScroll: true,
+    minZoom: MIN_ZOOM,
+    maxZoom: MAX_ZOOM,
+  })
+  panzoomInstance.on('zoom', () => {
+    const transform = panzoomInstance?.getTransform()
+    if (transform === undefined) {
+      return
+    }
+    isZoomed.value = transform.scale > MIN_ZOOM
+  })
+})
 
 watch(imageUrl, () => {
-  resetImageTransform()
+  if (panzoomInstance === null) {
+    return
+  }
+  const pw = imageViewerRef.value?.clientWidth
+  const ph = imageViewerRef.value?.clientHeight
+  if (pw === undefined || ph === undefined) {
+    return
+  }
+  panzoomInstance.zoomTo(pw / 2, ph / 2, 1.0 / MAX_ZOOM)
 })
 
 onUnmounted(() => {
-  isPanning = false
-  isTouchPanning = false
-  isPinching = false
+  if (panzoomInstance !== null) {
+    panzoomInstance.dispose()
+  }
 })
 </script>
 
 <template>
-  <div class="image-viewer">
+  <div ref="imageViewerRef" class="image-viewer">
     <!-- 画像 -->
-    <div
-      ref="imageStageRef"
-      class="image-stage"
-      :class="{ 'image-stage--draggable': imageScale > MIN_SCALE }"
-      @wheel.prevent.stop="handleWheel"
-      @pointerdown.stop="handlePointerDown"
-      @pointermove="handlePointerMove"
-      @pointerup="stopPanning"
-      @pointercancel="stopPanning"
-      @touchstart.stop="handleTouchStart"
-      @touchmove.prevent="handleTouchMove"
-      @touchend.stop="handleTouchEnd"
-      @touchcancel.stop="handleTouchEnd"
-      @click.stop="handleStageClick"
-    >
-      <img
-        ref="imageRef"
-        :src="imageUrl"
-        :alt="imageName"
-        class="image-content z-10"
-        :style="imageTransformStyle"
-        draggable="false"
-      />
-    </div>
+    <img ref="imageRef" :src="imageUrl" :alt="imageName" class="image-content" />
 
-    <div v-if="navbarVisible" class="nav-layer fixed inset-0 z-50 flex flex-col items-stretch justify-between bg-transparent m-0 p-0">
+    <div
+      v-if="navbarVisible"
+      class="nav-layer fixed inset-0 z-50 m-0 flex flex-col items-stretch justify-between bg-transparent p-0"
+    >
       <!-- 上部ナビゲーション -->
       <nav class="flex w-full items-center justify-between bg-black/20 p-4">
-        <button class="nav-button text-heading text-center text-sm leading-5 font-medium" @click.stop="toggleImageZoom">
+        <button
+          class="nav-button text-heading text-center text-sm leading-5 font-medium"
+          @click.stop="toggleImageZoom()"
+        >
           <svg
-            v-if="imageScale === MIN_SCALE"
+            v-if="!isZoomed"
             class="h-9 w-9 text-gray-800 dark:text-white"
             aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
@@ -362,7 +217,7 @@ onUnmounted(() => {
             />
           </svg>
         </button>
-        <div class="text-white text-center leading-5 font-medium truncate">{{ imageName }}</div>
+        <div class="truncate text-center leading-5 font-medium text-white">{{ imageName }}</div>
         <button class="nav-button text-heading text-center text-sm leading-5 font-medium" @click.stop="fireCloseEvent">
           <svg
             class="h-9 w-9 text-gray-800 dark:text-white"
@@ -386,7 +241,10 @@ onUnmounted(() => {
 
       <!-- 中央ナビゲーション -->
       <nav class="flex w-full items-center justify-between bg-transparent">
-        <button @click.stop="incrementImageIndex(-1)" class="nav-button text-heading text-center text-sm leading-5 font-medium bg-black/20 p-4">
+        <button
+          @click.stop="incrementImageIndex(-1)"
+          class="nav-button text-heading bg-black/20 p-4 text-center text-sm leading-5 font-medium"
+        >
           <svg
             class="h-9 w-9"
             aria-hidden="true"
@@ -399,7 +257,10 @@ onUnmounted(() => {
             <path stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7" />
           </svg>
         </button>
-        <button @click.stop="incrementImageIndex(1)" class="nav-button text-heading text-center text-sm leading-5 font-medium bg-black/20 p-4">
+        <button
+          @click.stop="incrementImageIndex(1)"
+          class="nav-button text-heading bg-black/20 p-4 text-center text-sm leading-5 font-medium"
+        >
           <svg
             class="h-9 w-9 text-gray-800 dark:text-white"
             aria-hidden="true"
@@ -416,7 +277,10 @@ onUnmounted(() => {
 
       <!-- 下部ナビゲーション -->
       <nav class="flex w-full items-center justify-between bg-black/20 p-4">
-        <button @click.stop="toggleFavorite" class="nav-button text-heading text-center text-sm leading-5 font-medium ms-auto me-auto">
+        <button
+          @click.stop="toggleFavorite"
+          class="nav-button text-heading ms-auto me-auto text-center text-sm leading-5 font-medium"
+        >
           <svg
             v-if="imageFavorite"
             class="h-9 w-9 text-white"
@@ -469,33 +333,14 @@ onUnmounted(() => {
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0.9);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-.image-stage {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  touch-action: none;
-}
-
-.image-stage--draggable {
-  cursor: grab;
-}
-
-.image-stage--draggable:active {
-  cursor: grabbing;
 }
 
 .image-content {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  transform-origin: center center;
-  user-select: none;
 }
 </style>

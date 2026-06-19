@@ -87,3 +87,9 @@ npm i flowbite
 ```bash
 npm i vue-router
 ```
+
+画像ビューアの拡大・縮小用に[panzoom](https://github.com/anvaka/panzoom)をインストールする。
+
+```bash
+npm i panzoom
+```

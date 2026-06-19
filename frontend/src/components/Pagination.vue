@@ -23,7 +23,9 @@ const MAX_DISPLAYINGPAGECOUNT: number = DISPLAYINGPAGECOUNT_DELTA * 2 + 1
 
 // ref変数
 const displayingPageCount: ComputedRef<number> = computed(() => Math.min(MAX_DISPLAYINGPAGECOUNT, props.numOfPages))
-const startPage: ComputedRef<number> = computed(() => Math.max(1, Math.min(props.numOfPages - (displayingPageCount.value - 1), props.page - DISPLAYINGPAGECOUNT_DELTA)))
+const startPage: ComputedRef<number> = computed(() =>
+  Math.max(1, Math.min(props.numOfPages - (displayingPageCount.value - 1), props.page - DISPLAYINGPAGECOUNT_DELTA))
+)
 const displayingPages: ComputedRef<number[]> = computed(() => {
   const pages: number[] = []
   for (let i = 0; i < displayingPageCount.value; i++) {

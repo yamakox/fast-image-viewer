@@ -225,15 +225,15 @@ function handlePageClick(page: number) {
 
       <!-- ページネーション -->
       <pagination :page="page" :numOfPages="numOfPages" @page-click="handlePageClick" class="m-0 py-4" />
-
-      <!-- 画像ビューアー -->
-      <image-viewer
-        v-if="thumbnailIndex !== null"
-        :index="thumbnailIndex"
-        :images="thumbnails?.results ?? []"
-        @close="thumbnailIndex = null"
-      />
     </div>
+
+    <!-- 画像ビューアー -->
+    <image-viewer
+      v-if="thumbnailIndex !== null"
+      :index="thumbnailIndex"
+      :images="thumbnails?.results ?? []"
+      @close="thumbnailIndex = null"
+    />
   </div>
 </template>
 
