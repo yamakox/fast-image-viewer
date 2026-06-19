@@ -83,7 +83,7 @@ function firePageButtonClickEvent(n: number) {
         <button
           v-if="page === props.page"
           aria-current="page"
-          class="text-fg-brand bg-neutral-tertiary-medium border-default-medium hover:text-fg-brand box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
+          class="text-fg-brand bg-neutral-quaternary-medium border-default-medium hover:text-fg-brand box-border flex h-10 w-10 items-center justify-center border text-sm font-medium focus:outline-none"
         >
           {{ page }}
         </button>
