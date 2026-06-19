@@ -8,4 +8,4 @@ RUN uv sync --no-dev
 ENV STATIC_ROOT="/usr/share/nginx/html/static/"
 RUN uv run --no-dev manage.py collectstatic
 
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "--no-dev", "main.py"]
