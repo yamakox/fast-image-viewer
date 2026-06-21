@@ -138,6 +138,11 @@ CORS_ALLOWED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 # フロントエンドからのCSRF保護付きPOSTを許可する
 CSRF_TRUSTED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 
+# セッションCookieの有効期限 (https://docs.djangoproject.com/en/6.0/ref/settings/#sessions)
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 365  # 1年
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+CSRF_COOKIE_AGE = SESSION_COOKIE_AGE
+
 # プリフライト(事前リクエスト)の設定 (デフォルトは86400秒==1日)
 # 30分だけ許可
 # CORS_PREFLIGHT_MAX_AGE = 60 * 30
