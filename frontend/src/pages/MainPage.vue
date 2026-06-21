@@ -3,7 +3,7 @@ import FolderOpenIcon from '../components/FolderOpenIcon.vue'
 import AngleLeftIcon from '../components/AngleLeftIcon.vue'
 import { watch, computed, ref, onMounted, onUnmounted, nextTick, type Ref, type ComputedRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { checkSession, getData, getThumbnailUrl, postData } from '../util'
+import { getData, getSession, getThumbnailUrl, postData } from '../util'
 import type { Folder, FolderListItem, ImageListPage } from '../types'
 import FolderMenuItem from '../components/FolderMenuItem.vue'
 import Pagination from '../components/Pagination.vue'
@@ -28,6 +28,7 @@ const numOfPages: Ref<number> = ref(1)
 const thumbnailIndex: Ref<number | null> = ref(null)
 const favoriteOnly: Ref<boolean> = ref(false)
 const isAuthenticated = ref(false)
+const username: Ref<string> = ref('')
 
 // 型定義
 interface FoldersQuery {
@@ -106,11 +107,12 @@ watch(
 )
 
 onMounted(async () => {
-  const authenticated = await checkSession()
-  if (!authenticated) {
+  const session = await getSession()
+  if (!session) {
     router.replace('/login')
     return
   }
+  username.value = session.username
   isAuthenticated.value = true
   await loadPageData()
   await nextTick()
@@ -242,9 +244,10 @@ async function handleLogout(event: Event) {
               <button
                 type="button"
                 @click="handleLogout"
-                class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex w-full flex-col items-stretch px-2 py-1.5 text-sm"
+                class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex w-full items-center justify-center px-2 py-1.5 text-sm"
               >
-                <span class="ms-1 truncate">ログアウト</span>
+                <span class="text-heading font-medium text-sm ms-1 min-w-0 truncate" :title="username">{{ username }}</span>
+                <span class="text-heading text-sm ms-1 truncate">のログアウト</span>
               </button>
             </div>
           </li>

@@ -25,13 +25,25 @@ function getImageUrl(id: number): string {
   return `${API_BASE_URL}/api/v1/images/${id}/image`
 }
 
-async function checkSession(): Promise<boolean> {
+interface SessionUser {
+  id: number
+  username: string
+}
+
+async function getSession(): Promise<SessionUser | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/session`, { credentials: 'include' })
-    return response.ok
+    if (!response.ok) {
+      return null
+    }
+    return (await response.json()) as SessionUser
   } catch {
-    return false
+    return null
   }
+}
+
+async function checkSession(): Promise<boolean> {
+  return (await getSession()) !== null
 }
 
 async function getData(url: string, queryParams: any = {}): Promise<any | null> {
@@ -107,4 +119,5 @@ async function patchData(url: string, data: any): Promise<any | null> {
   }
 }
 
-export { API_BASE_URL, checkSession, ensureCsrfCookie, getData, postData, patchData, getThumbnailUrl, getImageUrl }
+export { API_BASE_URL, checkSession, ensureCsrfCookie, getData, getSession, postData, patchData, getThumbnailUrl, getImageUrl }
+export type { SessionUser }
