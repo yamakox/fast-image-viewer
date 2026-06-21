@@ -6,6 +6,9 @@
 # from django.db.models.query import QuerySet
 from hashlib import md5
 from django.http import HttpResponse, JsonResponse
+from django.db.models import DateTimeField, OuterRef, Subquery, Value
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework import viewsets, pagination  # , renderers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -56,20 +59,36 @@ def _hash_password(password: str) -> str:
     return md5(password.encode()).hexdigest()
 
 
+def _get_session_user(request) -> models.User | None:
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return None
+    try:
+        return models.User.objects.get(pk=user_id)
+    except models.User.DoesNotExist:
+        return None
+
+
+def _annotate_favorite(queryset, user: models.User | None):
+    if user:
+        favorite_subquery = models.Favorite.objects.filter(
+            image=OuterRef('pk'),
+            user=user,
+        ).values('timestamp')[:1]
+        return queryset.annotate(
+            favorite=Subquery(favorite_subquery, output_field=DateTimeField()),
+        )
+    return queryset.annotate(
+        favorite=Value(None, output_field=DateTimeField()),
+    )
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @authentication_classes([SessionAuthentication])
 def session(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        return Response(
-            {'detail': '認証されていません。'},
-            status=HTTP_401_UNAUTHORIZED,
-        )
-    try:
-        user = models.User.objects.get(pk=user_id)
-    except models.User.DoesNotExist:
-        request.session.flush()
+    user = _get_session_user(request)
+    if not user:
         return Response(
             {'detail': '認証されていません。'},
             status=HTTP_401_UNAUTHORIZED,
@@ -192,12 +211,22 @@ class ImageViewSet(viewsets.ModelViewSet):
     ordering = ['-timestamp']
     permission_classes = [AllowAny]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['user'] = _get_session_user(self.request)
+        return context
+
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = _get_session_user(self.request)
+        queryset = _annotate_favorite(queryset, user)
         if self.request.query_params.get('rootonly'):
             queryset = queryset.filter(parent__isnull=True)
         if self.request.query_params.get('favoriteonly'):
-            queryset = queryset.filter(favorite__isnull=False)
+            if user:
+                queryset = queryset.filter(favorites__user=user).distinct()
+            else:
+                queryset = queryset.none()
         return queryset
 
     def get_serializer_class(self):
@@ -212,19 +241,32 @@ class ImageViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, pk)
 
     def partial_update(self, request, pk=None):
+        user = _get_session_user(request)
+        if not user:
+            return Response(
+                {'detail': '認証されていません。'},
+                status=HTTP_401_UNAUTHORIZED,
+            )
         image = self.__get_image_record(pk)
         if image is None:
             return _make_404_response(detail='Image data not found.')
-        serializer = serializers.ImageSerializer(image, request.data, partial=True)
-        if not serializer.is_valid():
-            raise ValidationError(serializer.errors)
-        serializer.save()
-        return Response(
-            {
-                'id': image.id,
-                'favorite': image.favorite,
-            }
+        if 'favorite' not in request.data:
+            raise ValidationError({'favorite': 'This field is required.'})
+
+        favorite_value = request.data.get('favorite')
+        if favorite_value is None:
+            models.Favorite.objects.filter(user=user, image=image).delete()
+            return Response({'id': image.id, 'favorite': None})
+
+        timestamp = parse_datetime(favorite_value) if isinstance(favorite_value, str) else favorite_value
+        if timestamp is None:
+            timestamp = timezone.now()
+        favorite, _created = models.Favorite.objects.update_or_create(
+            user=user,
+            image=image,
+            defaults={'timestamp': timestamp},
         )
+        return Response({'id': image.id, 'favorite': favorite.timestamp})
 
     @action(methods=['get'], detail=True, renderer_classes=[image_renderers.JPEGRenderer])
     def image(self, request, pk=None):

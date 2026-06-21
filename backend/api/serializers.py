@@ -14,12 +14,20 @@ class FolderListSerializer(FolderSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
+    favorite = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Image
         fields = ['id', 'name', 'parent', 'hash', 'timestamp', 'favorite']
-        extra_kwargs = {
-            'favorite': {'allow_null': True, 'required': True},
-        }
+
+    def get_favorite(self, obj: models.Image):
+        if hasattr(obj, 'favorite'):
+            return obj.favorite
+        user = self.context.get('user')
+        if not user:
+            return None
+        favorite = models.Favorite.objects.filter(user=user, image=obj).first()
+        return favorite.timestamp if favorite else None
 
 
 class ImageListSerializer(ImageSerializer):

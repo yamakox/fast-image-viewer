@@ -24,10 +24,6 @@ class Image(models.Model):
     )
     hash = models.CharField(max_length=16)
     timestamp = models.DateTimeField()
-    favorite = models.DateTimeField(
-        blank=False,
-        null=True,
-    )
 
 
 class User(models.Model):
@@ -43,7 +39,15 @@ class Favorite(models.Model):
         related_name='favorites',
     )
     user = models.ForeignKey(
-        Image,
+        User,
         on_delete=models.CASCADE,
-        related_name='+',
+        related_name='favorites',
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'image'],
+                name='unique_user_image_favorite',
+            ),
+        ]
