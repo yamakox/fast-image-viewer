@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'fast_image_viewer.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': APPDATA_FOLDER_PATH / 'db.sqlite3',
+        'NAME': APPDATA_FOLDER_PATH / 'dataset.sqlite3',
     }
 }
 
@@ -157,5 +157,8 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
     ],
 }

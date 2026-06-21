@@ -144,7 +144,7 @@ function handlePageClick(page: number) {
       class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 -translate-x-full border-e pt-14 transition-transform md:translate-x-0 md:pt-0"
       aria-label="Sidebar"
     >
-      <div class="h-full overflow-y-auto px-3 py-0">
+      <div class="h-full overflow-y-auto px-3 py-0 flex flex-col justify-between">
         <!-- 現在のフォルダー -->
         <ul class="border-default m-0 space-y-2 border-b py-2 font-light">
           <li class="hidden md:block">
@@ -174,9 +174,22 @@ function handlePageClick(page: number) {
         </ul>
 
         <!-- サブフォルダー -->
-        <ul class="m-0 space-y-2 py-2 font-light">
+        <ul class="border-default m-0 space-y-2 border-b py-2 font-light">
           <li v-for="folder in folders" :key="folder.id">
             <folder-menu-item :id="folder.id" :name="folder.name" />
+          </li>
+        </ul>
+
+        <!-- ログアウト -->
+        <ul class="m-0 mt-auto space-y-2 py-2 font-light">
+          <li>
+            <div class="folder-menu-item">
+              <button
+                class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex flex-col items-stretch px-2 py-1.5 text-sm w-full"
+              >
+                <span class="ms-1 truncate">ログアウト</span>
+              </button>
+            </div>
           </li>
         </ul>
       </div>
