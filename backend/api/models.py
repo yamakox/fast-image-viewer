@@ -1,4 +1,3 @@
-from hashlib import md5
 from django.db import models
 
 
@@ -39,12 +38,12 @@ class User(models.Model):
 class Favorite(models.Model):
     timestamp = models.DateTimeField()
     image = models.ForeignKey(
-        Image, 
+        Image,
         on_delete=models.CASCADE,
         related_name='favorites',
     )
     user = models.ForeignKey(
-        Image, 
+        Image,
         on_delete=models.CASCADE,
         related_name='+',
     )

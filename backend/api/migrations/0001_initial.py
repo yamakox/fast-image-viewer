@@ -5,11 +5,9 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
@@ -26,7 +24,16 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.TextField()),
                 ('pathname', models.TextField()),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='children', to='api.folder')),
+                (
+                    'parent',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='children',
+                        to='api.folder',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
@@ -37,7 +44,16 @@ class Migration(migrations.Migration):
                 ('hash', models.CharField(max_length=16)),
                 ('timestamp', models.DateTimeField()),
                 ('favorite', models.DateTimeField(null=True)),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='images', to='api.folder')),
+                (
+                    'parent',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='images',
+                        to='api.folder',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
@@ -45,8 +61,16 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('timestamp', models.DateTimeField()),
-                ('image', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='favorites', to='api.image')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='api.image')),
+                (
+                    'image',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name='favorites', to='api.image'
+                    ),
+                ),
+                (
+                    'user',
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='api.image'),
+                ),
             ],
         ),
     ]

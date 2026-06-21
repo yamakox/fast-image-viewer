@@ -1,19 +1,59 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { postData } from '../util'
+
+const router = useRouter()
+const username = ref('')
+const password = ref('')
+const error = ref('')
+
+async function handleSubmit(event: Event) {
+  event.preventDefault()
+  error.value = ''
+  const { ok, result } = await postData('/api/v1/register', {
+    username: username.value,
+    password: password.value,
+  })
+  if (ok) {
+    router.push('/login')
+    return
+  }
+  error.value = (result?.detail as string) ?? 'ユーザー登録に失敗しました。'
+}
 </script>
 
 <template>
   <div class="register-page-container">
-    <div class="text-heading text-xl mb-5">Fast Image Viewer</div>
-    <form class="max-w-sm mx-auto">
+    <div class="text-heading mb-5 text-xl">Fast Image Viewer</div>
+    <form class="mx-auto max-w-sm" @submit="handleSubmit">
       <div class="mb-5">
-        <label for="username" class="block mb-2.5 text-sm font-medium text-heading">ユーザー名:</label>
-        <input type="username" id="username" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs" required />
+        <label for="username" class="text-heading mb-2.5 block text-sm font-medium">ユーザー名:</label>
+        <input
+          v-model="username"
+          type="text"
+          id="username"
+          class="bg-neutral-secondary-medium border-default-medium text-heading rounded-base focus:ring-brand focus:border-brand block w-full border px-3 py-2.5 text-sm shadow-xs"
+          required
+        />
       </div>
       <div class="mb-5">
-        <label for="password" class="block mb-2.5 text-sm font-medium text-heading">パスワード:</label>
-        <input type="password" id="password" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs" required />
+        <label for="password" class="text-heading mb-2.5 block text-sm font-medium">パスワード:</label>
+        <input
+          v-model="password"
+          type="password"
+          id="password"
+          class="bg-neutral-secondary-medium border-default-medium text-heading rounded-base focus:ring-brand focus:border-brand block w-full border px-3 py-2.5 text-sm shadow-xs"
+          required
+        />
       </div>
-      <button type="submit" class="text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">ユーザー登録</button>
+      <p v-if="error" class="mb-5 text-sm text-red-600">{{ error }}</p>
+      <button
+        type="submit"
+        class="bg-brand hover:bg-brand-strong focus:ring-brand-medium rounded-base box-border border border-transparent px-4 py-2.5 text-sm leading-5 font-medium text-white shadow-xs focus:ring-4 focus:outline-none"
+      >
+        ユーザー登録
+      </button>
     </form>
   </div>
 </template>

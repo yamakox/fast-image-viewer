@@ -135,6 +135,9 @@ CORS_ALLOW_CREDENTIALS = True
 # アクセスを許可したいURL（アクセス元）を追加
 CORS_ALLOWED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 
+# フロントエンドからのCSRF保護付きPOSTを許可する
+CSRF_TRUSTED_ORIGINS = env.CORS_ALLOWED_ORIGINS
+
 # プリフライト(事前リクエスト)の設定 (デフォルトは86400秒==1日)
 # 30分だけ許可
 # CORS_PREFLIGHT_MAX_AGE = 60 * 30

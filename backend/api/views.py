@@ -4,13 +4,21 @@
 #     return JsonResponse({'value': 'Hello from Django!'})
 
 # from django.db.models.query import QuerySet
+from hashlib import md5
 from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, pagination  # , renderers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import action
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
+from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.status import (
+    HTTP_201_CREATED,
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_404_NOT_FOUND,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 from . import models
 from . import serializers
 from . import renderers as image_renderers
@@ -41,6 +49,92 @@ def _make_500_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
         status=HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+
+
+def _hash_password(password: str) -> str:
+    return md5(password.encode()).hexdigest()
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def session(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return Response(
+            {'detail': '認証されていません。'},
+            status=HTTP_401_UNAUTHORIZED,
+        )
+    try:
+        user = models.User.objects.get(pk=user_id)
+    except models.User.DoesNotExist:
+        request.session.flush()
+        return Response(
+            {'detail': '認証されていません。'},
+            status=HTTP_401_UNAUTHORIZED,
+        )
+    return Response({'id': user.id, 'username': user.username})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def login(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    if not username or not password:
+        return Response(
+            {'detail': 'ユーザー名とパスワードが必要です。'},
+            status=HTTP_400_BAD_REQUEST,
+        )
+    try:
+        user = models.User.objects.get(username=username)
+    except models.User.DoesNotExist:
+        return Response(
+            {'detail': 'ログインに失敗しました。'},
+            status=HTTP_401_UNAUTHORIZED,
+        )
+    if user.password != _hash_password(password):
+        return Response(
+            {'detail': 'ログインに失敗しました。'},
+            status=HTTP_401_UNAUTHORIZED,
+        )
+    request.session['user_id'] = user.id
+    return Response({'id': user.id, 'username': user.username})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def logout(request):
+    request.session.flush()
+    return Response({'detail': 'ログアウトしました。'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def register(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    if not username or not password:
+        return Response(
+            {'detail': 'ユーザー名とパスワードが必要です。'},
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if models.User.objects.filter(username=username).exists():
+        return Response(
+            {'detail': 'このユーザー名は既に使用されています。'},
+            status=HTTP_400_BAD_REQUEST,
+        )
+    user = models.User.objects.create(
+        username=username,
+        password=_hash_password(password),
+    )
+    return Response(
+        {'id': user.id, 'username': user.username},
+        status=HTTP_201_CREATED,
     )
 
 

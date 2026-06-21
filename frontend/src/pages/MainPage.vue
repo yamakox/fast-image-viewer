@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import FolderOpenIcon from '../components/FolderOpenIcon.vue'
 import AngleLeftIcon from '../components/AngleLeftIcon.vue'
-import { watch, computed, ref, type Ref, type ComputedRef } from 'vue'
+import { watch, computed, ref, onMounted, onUnmounted, nextTick, type Ref, type ComputedRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getData, getThumbnailUrl } from '../util'
+import { checkSession, getData, getThumbnailUrl, postData } from '../util'
 import type { Folder, FolderListItem, ImageListPage } from '../types'
 import FolderMenuItem from '../components/FolderMenuItem.vue'
 import Pagination from '../components/Pagination.vue'
@@ -27,6 +27,7 @@ const page: Ref<number> = ref(1)
 const numOfPages: Ref<number> = ref(1)
 const thumbnailIndex: Ref<number | null> = ref(null)
 const favoriteOnly: Ref<boolean> = ref(false)
+const isAuthenticated = ref(false)
 
 // 型定義
 interface FoldersQuery {
@@ -34,6 +35,30 @@ interface FoldersQuery {
   rootonly?: string
   page?: string
   favoriteonly?: string
+}
+
+function syncSidebarAccessibility() {
+  const sidebar = document.getElementById('main-sidebar')
+  if (!sidebar) {
+    return
+  }
+  if (window.matchMedia('(min-width: 768px)').matches) {
+    sidebar.removeAttribute('aria-hidden')
+    sidebar.removeAttribute('aria-modal')
+    sidebar.removeAttribute('role')
+  }
+}
+
+function moveFocusOutsideSidebar() {
+  const drawerToggle = document.querySelector<HTMLButtonElement>('[data-drawer-toggle="main-sidebar"]')
+  const nav = drawerToggle?.closest('nav')
+  if (drawerToggle && nav && getComputedStyle(nav).display !== 'none') {
+    drawerToggle.focus()
+    return
+  }
+  document.body.setAttribute('tabindex', '-1')
+  document.body.focus({ preventScroll: true })
+  document.body.removeAttribute('tabindex')
 }
 
 async function loadPageData() {
@@ -74,10 +99,29 @@ async function loadPageData() {
 watch(
   () => route.fullPath,
   () => {
-    loadPageData()
-  },
-  { immediate: true }
+    if (isAuthenticated.value) {
+      loadPageData()
+    }
+  }
 )
+
+onMounted(async () => {
+  const authenticated = await checkSession()
+  if (!authenticated) {
+    router.replace('/login')
+    return
+  }
+  isAuthenticated.value = true
+  await loadPageData()
+  await nextTick()
+  syncSidebarAccessibility()
+})
+
+const desktopMediaQuery = window.matchMedia('(min-width: 768px)')
+desktopMediaQuery.addEventListener('change', syncSidebarAccessibility)
+onUnmounted(() => {
+  desktopMediaQuery.removeEventListener('change', syncSidebarAccessibility)
+})
 
 function handleFavoriteOnlyChange() {
   router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined } })
@@ -87,10 +131,21 @@ function handleFavoriteOnlyChange() {
 function handlePageClick(page: number) {
   router.push({ query: { ...route.query, page: page.toString() } })
 }
+
+async function handleLogout(event: Event) {
+  const button = event.currentTarget as HTMLButtonElement
+  button.blur()
+  moveFocusOutsideSidebar()
+
+  const { ok } = await postData('/api/v1/logout', {})
+  if (ok) {
+    location.href = router.resolve({ name: 'Login' }).href
+  }
+}
 </script>
 
 <template>
-  <div class="main-page-container">
+  <div v-if="isAuthenticated" class="main-page-container">
     <!-- 半透明なNavbar -->
     <nav
       class="dark:bg-dark/50 fixed top-0 z-50 w-full translate-y-0 bg-white/50 backdrop-blur-sm transition-transform md:hidden md:-translate-y-full"
@@ -144,7 +199,7 @@ function handlePageClick(page: number) {
       class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 -translate-x-full border-e pt-14 transition-transform md:translate-x-0 md:pt-0"
       aria-label="Sidebar"
     >
-      <div class="h-full overflow-y-auto px-3 py-0 flex flex-col justify-between">
+      <div class="flex h-full flex-col justify-between overflow-y-auto px-3 py-0">
         <!-- 現在のフォルダー -->
         <ul class="border-default m-0 space-y-2 border-b py-2 font-light">
           <li class="hidden md:block">
@@ -185,7 +240,9 @@ function handlePageClick(page: number) {
           <li>
             <div class="folder-menu-item">
               <button
-                class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex flex-col items-stretch px-2 py-1.5 text-sm w-full"
+                type="button"
+                @click="handleLogout"
+                class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex w-full flex-col items-stretch px-2 py-1.5 text-sm"
               >
                 <span class="ms-1 truncate">ログアウト</span>
               </button>
