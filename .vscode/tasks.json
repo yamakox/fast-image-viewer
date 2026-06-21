@@ -23,7 +23,7 @@
       "options": {
         "cwd": "${workspaceFolder}/backend"
       },
-      "command": "uv run manage.py makemigrations && uv run manage.py migrate"
+      "command": "uv run manage.py makemigrations api && uv run manage.py migrate"
     },
     {
       "label": "T012: データセットフォルダーのスキャン",
