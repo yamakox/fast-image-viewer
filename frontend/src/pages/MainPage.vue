@@ -247,7 +247,7 @@ async function handleLogout(event: Event) {
                 class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex w-full items-center justify-center px-2 py-1.5 text-sm"
               >
                 <span class="text-heading font-medium text-sm ms-1 min-w-0 truncate" :title="username">{{ username }}</span>
-                <span class="text-heading text-sm ms-1 truncate">のログアウト</span>
+                <span class="text-heading text-sm truncate">のログアウト</span>
               </button>
             </div>
           </li>
