@@ -13,6 +13,21 @@ import ImageViewer from '../components/ImageViewer.vue'
 const route = useRoute()
 const router = useRouter()
 
+// 定数
+
+// ORDERRING_PARAMETERS[名前順(1/0)][昇順(1/0)] → orderingクエリーパラメータの値
+const ORDERING_PARAMETERS: Record<number, Record<number, string | undefined>> = {
+  // 名前順
+  1: {
+    1: 'name',
+    0: '-name',
+  },
+  0: {
+    1: 'timestamp',
+    0: undefined, // デフォルトの並び順(orderingクエリーパラメータを指定しない)
+  },
+}
+
 // ref変数
 const currentFolder: Ref<Folder | null> = ref(null)
 const linkToParent: ComputedRef<string | null> = computed(() => {
@@ -27,15 +42,28 @@ const page: Ref<number> = ref(1)
 const numOfPages: Ref<number> = ref(1)
 const thumbnailIndex: Ref<number | null> = ref(null)
 const favoriteOnly: Ref<boolean> = ref(false)
+const sortByName: Ref<boolean> = ref(false)
+const sortAscending: Ref<boolean> = ref(false)
 
 // 型定義
-interface FoldersQuery {
+interface PageQuery {
   parent?: string
   rootonly?: string
   page?: string
   favoriteonly?: string
+  ordering?: string
 }
 
+// ページのクエリーパラメータからAPIのクエリーパラメータを生成
+function getQueryFromRouteQuery(routeQuery: any /* LocationQuery$1 */): PageQuery {
+  const query: PageQuery = { ...routeQuery }
+  if (!routeQuery.parent) {
+    query.rootonly = 'yes'
+  }
+  return query
+}
+
+// ページデータの読み込み
 async function loadPageData() {
   console.log('route.query:', route.query)
 
@@ -56,31 +84,35 @@ async function loadPageData() {
   }
 
   // サブフォルダーの取得
-  const params: FoldersQuery = { ...route.query }
-  if (!route.query.parent) {
-    params.rootonly = 'yes'
-  }
-  folders.value = ((await getData('/api/v1/folders', params)) as FolderListItem[]) ?? []
+  const folderParams: PageQuery = getQueryFromRouteQuery(route.query)
+  folderParams.ordering = undefined
+  folders.value = ((await getData('/api/v1/folders', folderParams)) as FolderListItem[]) ?? []
 
   // サムネイルの取得
-  if (route.query.page) {
-    params.page = route.query.page as string
+  const imageParams: PageQuery = getQueryFromRouteQuery(route.query)
+  thumbnails.value = (await getData('/api/v1/images', imageParams)) as ImageListPage | null
+
+  // お気に入りボタンをオンにすると、当該ページ番号が不在になってthumbnails.valueがnullになる場合があるので、ページ番号を消して再読込する
+  if (!thumbnails.value) {
+    router.push({ query: { ...route.query, page: undefined } })
   }
-  thumbnails.value = (await getData('/api/v1/images', params)) as ImageListPage | null
+
   page.value = thumbnails.value?.page ?? 1
   numOfPages.value = thumbnails.value?.num_pages ?? 1
 }
 
 watch(
   () => route.fullPath,
-  () => {
-    loadPageData()
+  async () => {
+    await loadPageData()
   },
   { immediate: true }
 )
 
-function handleFavoriteOnlyChange() {
-  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined } })
+// クエリー条件変更ボタンのクリックイベントの処理
+function handleQueryConditionChange() {
+  const ordering = ORDERING_PARAMETERS[sortByName.value ? 1 : 0][sortAscending.value ? 1 : 0]
+  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined, ordering: ordering } })
 }
 
 // ページネーションのクリックイベントの処理
@@ -164,11 +196,34 @@ function handlePageClick(page: number) {
           </li>
           <li>
             <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
-              <input type="checkbox" v-model="favoriteOnly" @change="handleFavoriteOnlyChange" class="peer sr-only" />
+              <input type="checkbox" v-model="favoriteOnly" @change="handleQueryConditionChange" class="peer sr-only" />
               <div
                 class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
               ></div>
               <span class="text-heading ms-3 text-sm font-medium select-none">♥だけ表示</span>
+            </label>
+          </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input type="checkbox" v-model="sortByName" @change="handleQueryConditionChange" class="peer sr-only" />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">名前順で表示</span>
+            </label>
+          </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input
+                type="checkbox"
+                v-model="sortAscending"
+                @change="handleQueryConditionChange"
+                class="peer sr-only"
+              />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">昇順で並べ替え</span>
             </label>
           </li>
         </ul>
