@@ -4,7 +4,7 @@
 #     return JsonResponse({'value': 'Hello from Django!'})
 
 # from django.db.models.query import QuerySet
-from hashlib import md5
+from django.contrib.auth import authenticate, get_user_model, login as auth_login, logout as auth_logout
 from django.http import HttpResponse, JsonResponse
 from django.db.models import DateTimeField, OuterRef, Subquery, Value
 from django.utils import timezone
@@ -25,6 +25,7 @@ from pathlib import Path
 
 root_path = Path(env.FIV_DATASET_FOLDER_PATH).resolve()
 appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
+User = get_user_model()
 
 
 def _make_400_response(**kwargs) -> JsonResponse:
@@ -48,21 +49,13 @@ def _make_500_response(**kwargs) -> JsonResponse:
     )
 
 
-def _hash_password(password: str) -> str:
-    return md5(password.encode()).hexdigest()
+def _get_session_user(request) -> User | None:
+    if request.user.is_authenticated:
+        return request.user
+    return None
 
 
-def _get_session_user(request) -> models.User | None:
-    user_id = request.session.get('user_id')
-    if not user_id:
-        return None
-    try:
-        return models.User.objects.get(pk=user_id)
-    except models.User.DoesNotExist:
-        return None
-
-
-def _annotate_favorite(queryset, user: models.User | None):
+def _annotate_favorite(queryset, user: User | None):
     if user:
         favorite_subquery = models.Favorite.objects.filter(
             image=OuterRef('pk'),
@@ -100,19 +93,13 @@ def login(request):
             {'detail': 'ユーザー名とパスワードが必要です。'},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    try:
-        user = models.User.objects.get(username=username)
-    except models.User.DoesNotExist:
+    user = authenticate(request, username=username, password=password)
+    if user is None:
         return Response(
             {'detail': 'ログインに失敗しました。'},
             status=status.HTTP_401_UNAUTHORIZED,
         )
-    if user.password != _hash_password(password):
-        return Response(
-            {'detail': 'ログインに失敗しました。'},
-            status=status.HTTP_401_UNAUTHORIZED,
-        )
-    request.session['user_id'] = user.id
+    auth_login(request, user)
     return Response({'id': user.id, 'username': user.username})
 
 
@@ -120,34 +107,8 @@ def login(request):
 @permission_classes([AllowAny])
 @authentication_classes([SessionAuthentication])
 def logout(request):
-    request.session.flush()
+    auth_logout(request)
     return Response({'detail': 'ログアウトしました。'})
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([SessionAuthentication])
-def register(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
-    if not username or not password:
-        return Response(
-            {'detail': 'ユーザー名とパスワードが必要です。'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    if models.User.objects.filter(username=username).exists():
-        return Response(
-            {'detail': 'このユーザー名は既に使用されています。'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    user = models.User.objects.create(
-        username=username,
-        password=_hash_password(password),
-    )
-    return Response(
-        {'id': user.id, 'username': user.username},
-        status=status.HTTP_201_CREATED,
-    )
 
 
 class FolderViewSet(viewsets.ModelViewSet):

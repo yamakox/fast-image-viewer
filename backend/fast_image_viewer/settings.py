@@ -105,6 +105,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Authの設定(django.contrib.auth)
+LOGIN_REDIRECT_URL = 'http://localhost:5173/'
+LOGIN_URL = None
+LOGOUT_REDIRECT_URL = None
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
