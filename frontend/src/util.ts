@@ -14,7 +14,7 @@ async function ensureCsrfCookie(): Promise<void> {
   if (getCsrfToken()) {
     return
   }
-  await fetch(`${API_BASE_URL}/api/v1/folders?rootonly=yes`, { credentials: 'include' })
+  await fetch(`${API_BASE_URL}/api/v1/session`, { credentials: 'include' })
 }
 
 function getThumbnailUrl(id: number): string {

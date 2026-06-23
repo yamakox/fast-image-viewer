@@ -6,12 +6,13 @@
 # from django.db.models.query import QuerySet
 from django.contrib.auth import authenticate, get_user_model, login as auth_login, logout as auth_logout
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import DateTimeField, OuterRef, Subquery, Value
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import viewsets, pagination, status  # , renderers
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
 from rest_framework.authentication import SessionAuthentication
@@ -70,6 +71,7 @@ def _annotate_favorite(queryset, user: User | None):
 
 
 @api_view(['GET'])
+@ensure_csrf_cookie
 @permission_classes([AllowAny])
 @authentication_classes([SessionAuthentication])
 def session(request):
@@ -117,6 +119,7 @@ class FolderViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'head', 'options']
     queryset = models.Folder.objects.all()
     serializer_class = serializers.FolderSerializer
+    permission_classes = [IsAuthenticated]
     filterset_fields = ['parent']
     ordering_fields = [
         'name',
@@ -163,24 +166,21 @@ class ImageViewSet(viewsets.ModelViewSet):
     filterset_fields = ['parent']
     ordering_fields = ['name', 'parent', 'timestamp', 'favorite']
     ordering = ['-timestamp']
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['user'] = _get_session_user(self.request)
+        context['user'] = self.request.user
         return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = _get_session_user(self.request)
+        user = self.request.user
         queryset = _annotate_favorite(queryset, user)
         if self.request.query_params.get('rootonly'):
             queryset = queryset.filter(parent__isnull=True)
         if self.request.query_params.get('favoriteonly'):
-            if user:
-                queryset = queryset.filter(favorites__user=user).distinct()
-            else:
-                queryset = queryset.none()
+            queryset = queryset.filter(favorites__user=user).distinct()
         return queryset
 
     def get_serializer_class(self):
@@ -195,12 +195,6 @@ class ImageViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, pk)
 
     def partial_update(self, request, pk=None):
-        user = _get_session_user(request)
-        if not user:
-            return Response(
-                {'detail': '認証されていません。'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
         image = self.__get_image_record(pk)
         if image is None:
             return _make_404_response(detail='Image data not found.')
@@ -209,14 +203,14 @@ class ImageViewSet(viewsets.ModelViewSet):
 
         favorite_value = request.data.get('favorite')
         if favorite_value is None:
-            models.Favorite.objects.filter(user=user, image=image).delete()
+            models.Favorite.objects.filter(user=request.user, image=image).delete()
             return Response({'id': image.id, 'favorite': None})
 
         timestamp = parse_datetime(favorite_value) if isinstance(favorite_value, str) else favorite_value
         if timestamp is None:
             timestamp = timezone.now()
         favorite, _created = models.Favorite.objects.update_or_create(
-            user=user,
+            user=request.user,
             image=image,
             defaults={'timestamp': timestamp},
         )
