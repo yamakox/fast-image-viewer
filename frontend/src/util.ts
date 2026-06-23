@@ -119,5 +119,15 @@ async function patchData(url: string, data: any): Promise<any | null> {
   }
 }
 
-export { API_BASE_URL, checkSession, ensureCsrfCookie, getData, getSession, postData, patchData, getThumbnailUrl, getImageUrl }
+export {
+  API_BASE_URL,
+  checkSession,
+  ensureCsrfCookie,
+  getData,
+  getSession,
+  postData,
+  patchData,
+  getThumbnailUrl,
+  getImageUrl,
+}
 export type { SessionUser }

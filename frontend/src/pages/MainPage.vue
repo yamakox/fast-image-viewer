@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FolderOpenIcon from '../components/FolderOpenIcon.vue'
 import AngleLeftIcon from '../components/AngleLeftIcon.vue'
-import { watch, computed, ref, onMounted, onUnmounted, nextTick, type Ref, type ComputedRef } from 'vue'
+import { watch, computed, ref, onMounted, type Ref, type ComputedRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getData, getSession, getThumbnailUrl, postData } from '../util'
 import type { Folder, FolderListItem, ImageListPage } from '../types'
@@ -12,6 +12,21 @@ import ImageViewer from '../components/ImageViewer.vue'
 // Vue Router
 const route = useRoute()
 const router = useRouter()
+
+// 定数
+
+// ORDERRING_PARAMETERS[名前順(1/0)][昇順(1/0)] → orderingクエリーパラメータの値
+const ORDERING_PARAMETERS: Record<number, Record<number, string | undefined>> = {
+  // 名前順
+  1: {
+    1: 'name',
+    0: '-name',
+  },
+  0: {
+    1: 'timestamp',
+    0: undefined, // デフォルトの並び順(orderingクエリーパラメータを指定しない)
+  },
+}
 
 // ref変数
 const currentFolder: Ref<Folder | null> = ref(null)
@@ -27,43 +42,37 @@ const page: Ref<number> = ref(1)
 const numOfPages: Ref<number> = ref(1)
 const thumbnailIndex: Ref<number | null> = ref(null)
 const favoriteOnly: Ref<boolean> = ref(false)
+const sortByName: Ref<boolean> = ref(false)
+const sortAscending: Ref<boolean> = ref(false)
 const isAuthenticated = ref(false)
 const username: Ref<string> = ref('')
 
 // 型定義
-interface FoldersQuery {
+interface PageQuery {
   parent?: string
   rootonly?: string
   page?: string
   favoriteonly?: string
+  ordering?: string
 }
 
-function syncSidebarAccessibility() {
-  const sidebar = document.getElementById('main-sidebar')
-  if (!sidebar) {
-    return
-  }
-  if (window.matchMedia('(min-width: 768px)').matches) {
-    sidebar.removeAttribute('aria-hidden')
-    sidebar.removeAttribute('aria-modal')
-    sidebar.removeAttribute('role')
-  }
+// ログインページに移動
+function moveToLoginPage() {
+  location.href = router.resolve({ name: 'Login' }).href
 }
 
-function moveFocusOutsideSidebar() {
-  const drawerToggle = document.querySelector<HTMLButtonElement>('[data-drawer-toggle="main-sidebar"]')
-  const nav = drawerToggle?.closest('nav')
-  if (drawerToggle && nav && getComputedStyle(nav).display !== 'none') {
-    drawerToggle.focus()
-    return
+// ページのクエリーパラメータからAPIのクエリーパラメータを生成
+function getQueryFromRouteQuery(routeQuery: any /* LocationQuery$1 */): PageQuery {
+  const query: PageQuery = { ...routeQuery }
+  if (!routeQuery.parent) {
+    query.rootonly = 'yes'
   }
-  document.body.setAttribute('tabindex', '-1')
-  document.body.focus({ preventScroll: true })
-  document.body.removeAttribute('tabindex')
+  return query
 }
 
+// ページデータの読み込み
 async function loadPageData() {
-  console.log('route.query:', route.query)
+  console.log('loadPageData: route.query:', route.query)
 
   // 現在のフォルダーの取得
   if (route.query.parent) {
@@ -82,51 +91,49 @@ async function loadPageData() {
   }
 
   // サブフォルダーの取得
-  const params: FoldersQuery = { ...route.query }
-  if (!route.query.parent) {
-    params.rootonly = 'yes'
-  }
-  folders.value = ((await getData('/api/v1/folders', params)) as FolderListItem[]) ?? []
+  const folderParams: PageQuery = getQueryFromRouteQuery(route.query)
+  folderParams.ordering = undefined
+  folders.value = ((await getData('/api/v1/folders', folderParams)) as FolderListItem[]) ?? []
 
   // サムネイルの取得
-  if (route.query.page) {
-    params.page = route.query.page as string
+  const imageParams: PageQuery = getQueryFromRouteQuery(route.query)
+  thumbnails.value = (await getData('/api/v1/images', imageParams)) as ImageListPage | null
+  
+  // お気に入りボタンをオンにすると、当該ページ番号が不在になってthumbnails.valueがnullになる場合があるので、ページ番号を消して再読込する
+  if (!thumbnails.value) {
+    router.push({ query: { ...route.query, page: undefined } })
   }
-  thumbnails.value = (await getData('/api/v1/images', params)) as ImageListPage | null
+
   page.value = thumbnails.value?.page ?? 1
   numOfPages.value = thumbnails.value?.num_pages ?? 1
 }
 
+// ルートの変更を監視して、ページデータを読み込む
 watch(
   () => route.fullPath,
-  () => {
+  async () => {
     if (isAuthenticated.value) {
-      loadPageData()
+      await loadPageData()
     }
   }
 )
 
+// マウント時にページデータを読み込む
 onMounted(async () => {
   const session = await getSession()
   if (!session) {
-    router.replace('/login')
+    moveToLoginPage()
     return
   }
   username.value = session.username
   isAuthenticated.value = true
   await loadPageData()
-  await nextTick()
-  syncSidebarAccessibility()
 })
 
-const desktopMediaQuery = window.matchMedia('(min-width: 768px)')
-desktopMediaQuery.addEventListener('change', syncSidebarAccessibility)
-onUnmounted(() => {
-  desktopMediaQuery.removeEventListener('change', syncSidebarAccessibility)
-})
-
-function handleFavoriteOnlyChange() {
-  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined } })
+// クエリー条件変更ボタンのクリックイベントの処理
+function handleQueryConditionChange() {
+  const ordering = ORDERING_PARAMETERS[sortByName.value ? 1 : 0][sortAscending.value ? 1 : 0]
+  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined, ordering: ordering } })
 }
 
 // ページネーションのクリックイベントの処理
@@ -134,14 +141,14 @@ function handlePageClick(page: number) {
   router.push({ query: { ...route.query, page: page.toString() } })
 }
 
+// ログアウトボタンのクリックイベントの処理
 async function handleLogout(event: Event) {
   const button = event.currentTarget as HTMLButtonElement
   button.blur()
-  moveFocusOutsideSidebar()
 
   const { ok } = await postData('/api/v1/logout', {})
   if (ok) {
-    location.href = router.resolve({ name: 'Login' }).href
+    moveToLoginPage()
   }
 }
 </script>
@@ -221,11 +228,34 @@ async function handleLogout(event: Event) {
           </li>
           <li>
             <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
-              <input type="checkbox" v-model="favoriteOnly" @change="handleFavoriteOnlyChange" class="peer sr-only" />
+              <input type="checkbox" v-model="favoriteOnly" @change="handleQueryConditionChange" class="peer sr-only" />
               <div
                 class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
               ></div>
               <span class="text-heading ms-3 text-sm font-medium select-none">♥だけ表示</span>
+            </label>
+          </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input type="checkbox" v-model="sortByName" @change="handleQueryConditionChange" class="peer sr-only" />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">名前順で表示</span>
+            </label>
+          </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input
+                type="checkbox"
+                v-model="sortAscending"
+                @change="handleQueryConditionChange"
+                class="peer sr-only"
+              />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">昇順で並べ替え</span>
             </label>
           </li>
         </ul>
@@ -246,8 +276,10 @@ async function handleLogout(event: Event) {
                 @click="handleLogout"
                 class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex w-full items-center justify-center px-2 py-1.5 text-sm"
               >
-                <span class="text-heading font-medium text-sm ms-1 min-w-0 truncate" :title="username">{{ username }}</span>
-                <span class="text-heading text-sm truncate">のログアウト</span>
+                <span class="text-heading ms-1 min-w-0 truncate text-sm font-medium" :title="username">{{
+                  username
+                }}</span>
+                <span class="text-heading truncate text-sm">のログアウト</span>
               </button>
             </div>
           </li>
