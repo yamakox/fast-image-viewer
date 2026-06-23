@@ -16,7 +16,7 @@
 |PORT_API|WebアプリのAPIを公開するポート番号|
 |DATASET_PATH|画像データを格納しているフォルダーのフルパス名|
 
-`http://myserver.local:12345/`でWebアプリを公開する場合、以下のようになります。
+`http://myserver.local:12345/`でWebアプリを公開する場合、`.env`例は以下のようになります。
 
 ```.env
 PROTOCOL=http
@@ -78,7 +78,7 @@ docker volume rm fast-image-viewer_appdata
 docker compose run -i --rm app uv run manage.py createsuperuser
 ```
 
-`http://{HOST}:{PORT_API}/admin`で管理画面を開き、管理者ユーザーでログインして、ユーザーを作成してください。
+`http://{HOST}:{PORT_API}/admin` (`.env`例の場合は`http://myserver.local:12346/admin`)で管理画面を開き、管理者ユーザーでログインして、ユーザーを作成してください。
 
 ## 各フォルダーの説明
 

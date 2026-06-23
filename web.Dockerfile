@@ -23,4 +23,4 @@ FROM nginx:stable-alpine-slim AS runner
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY --from=backend-builder /usr/share/nginx/html/static /usr/share/nginx/html/static
-COPY ./nginx/conf.d/app.conf /etc/nginx/conf.d/app.conf
+COPY ./nginx/conf.d /etc/nginx/conf.d

@@ -13,7 +13,7 @@ services:
       ALLOWED_HOSTS: "localhost;127.0.0.1;${HOST:?The environment variable HOST is not set}"
       STATIC_ROOT: "/usr/share/nginx/html/static/"
       PAGINATION_SIZE: "100"
-      CORS_ALLOWED_ORIGINS: "${PROTOCOL:-https}://${HOST:?The environment variable HOST is not set}:${PORT_WEB:-80}"
+      CORS_ALLOWED_ORIGINS: "${PROTOCOL:-https}://${HOST:?The environment variable HOST is not set}:${PORT_WEB:-80};${PROTOCOL:-https}://${HOST:?The environment variable HOST is not set}:${PORT_API:-8000}"
       FIV_APPDATA_FOLDER_PATH: "/var/appdata"
       FIV_DATASET_FOLDER_PATH: "/var/dataset"
       FIV_THUMBNAIL_SIZE: "96"
