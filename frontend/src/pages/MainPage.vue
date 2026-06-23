@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import FolderOpenIcon from '../components/FolderOpenIcon.vue'
 import AngleLeftIcon from '../components/AngleLeftIcon.vue'
-import { watch, computed, ref, type Ref, type ComputedRef } from 'vue'
+import { watch, computed, ref, onMounted, type Ref, type ComputedRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getData, getThumbnailUrl } from '../util'
+import { getData, getSession, getThumbnailUrl, postData } from '../util'
 import type { Folder, FolderListItem, ImageListPage } from '../types'
 import FolderMenuItem from '../components/FolderMenuItem.vue'
 import Pagination from '../components/Pagination.vue'
@@ -12,6 +12,21 @@ import ImageViewer from '../components/ImageViewer.vue'
 // Vue Router
 const route = useRoute()
 const router = useRouter()
+
+// 定数
+
+// ORDERRING_PARAMETERS[名前順(1/0)][昇順(1/0)] → orderingクエリーパラメータの値
+const ORDERING_PARAMETERS: Record<number, Record<number, string | undefined>> = {
+  // 名前順
+  1: {
+    1: 'name',
+    0: '-name',
+  },
+  0: {
+    1: 'timestamp',
+    0: undefined, // デフォルトの並び順(orderingクエリーパラメータを指定しない)
+  },
+}
 
 // ref変数
 const currentFolder: Ref<Folder | null> = ref(null)
@@ -27,17 +42,37 @@ const page: Ref<number> = ref(1)
 const numOfPages: Ref<number> = ref(1)
 const thumbnailIndex: Ref<number | null> = ref(null)
 const favoriteOnly: Ref<boolean> = ref(false)
+const sortByName: Ref<boolean> = ref(false)
+const sortAscending: Ref<boolean> = ref(false)
+const isAuthenticated = ref(false)
+const username: Ref<string> = ref('')
 
 // 型定義
-interface FoldersQuery {
+interface PageQuery {
   parent?: string
   rootonly?: string
   page?: string
   favoriteonly?: string
+  ordering?: string
 }
 
+// ログインページに移動
+function moveToLoginPage() {
+  location.href = router.resolve({ name: 'Login' }).href
+}
+
+// ページのクエリーパラメータからAPIのクエリーパラメータを生成
+function getQueryFromRouteQuery(routeQuery: any /* LocationQuery$1 */): PageQuery {
+  const query: PageQuery = { ...routeQuery }
+  if (!routeQuery.parent) {
+    query.rootonly = 'yes'
+  }
+  return query
+}
+
+// ページデータの読み込み
 async function loadPageData() {
-  console.log('route.query:', route.query)
+  console.log('loadPageData: route.query:', route.query)
 
   // 現在のフォルダーの取得
   if (route.query.parent) {
@@ -56,41 +91,70 @@ async function loadPageData() {
   }
 
   // サブフォルダーの取得
-  const params: FoldersQuery = { ...route.query }
-  if (!route.query.parent) {
-    params.rootonly = 'yes'
-  }
-  folders.value = ((await getData('/api/v1/folders', params)) as FolderListItem[]) ?? []
+  const folderParams: PageQuery = getQueryFromRouteQuery(route.query)
+  folderParams.ordering = undefined
+  folders.value = ((await getData('/api/v1/folders', folderParams)) as FolderListItem[]) ?? []
 
   // サムネイルの取得
-  if (route.query.page) {
-    params.page = route.query.page as string
+  const imageParams: PageQuery = getQueryFromRouteQuery(route.query)
+  thumbnails.value = (await getData('/api/v1/images', imageParams)) as ImageListPage | null
+  
+  // お気に入りボタンをオンにすると、当該ページ番号が不在になってthumbnails.valueがnullになる場合があるので、ページ番号を消して再読込する
+  if (!thumbnails.value) {
+    router.push({ query: { ...route.query, page: undefined } })
   }
-  thumbnails.value = (await getData('/api/v1/images', params)) as ImageListPage | null
+
   page.value = thumbnails.value?.page ?? 1
   numOfPages.value = thumbnails.value?.num_pages ?? 1
 }
 
+// ルートの変更を監視して、ページデータを読み込む
 watch(
   () => route.fullPath,
-  () => {
-    loadPageData()
-  },
-  { immediate: true }
+  async () => {
+    if (isAuthenticated.value) {
+      await loadPageData()
+    }
+  }
 )
 
-function handleFavoriteOnlyChange() {
-  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined } })
+// マウント時にページデータを読み込む
+onMounted(async () => {
+  const session = await getSession()
+  if (!session) {
+    moveToLoginPage()
+    return
+  }
+  username.value = session.username
+  isAuthenticated.value = true
+  await loadPageData()
+})
+
+// クエリー条件変更ボタンのクリックイベントの処理
+function handleQueryConditionChange() {
+  const ordering = ORDERING_PARAMETERS[sortByName.value ? 1 : 0][sortAscending.value ? 1 : 0]
+  router.push({ query: { ...route.query, favoriteonly: favoriteOnly.value ? 'yes' : undefined, ordering: ordering } })
 }
 
 // ページネーションのクリックイベントの処理
 function handlePageClick(page: number) {
   router.push({ query: { ...route.query, page: page.toString() } })
 }
+
+// ログアウトボタンのクリックイベントの処理
+async function handleLogout(event: Event) {
+  const button = event.currentTarget as HTMLButtonElement
+  button.blur()
+
+  const { ok } = await postData('/api/v1/logout', {})
+  if (ok) {
+    moveToLoginPage()
+  }
+}
 </script>
 
 <template>
-  <div class="main-page-container">
+  <div v-if="isAuthenticated" class="main-page-container">
     <!-- 半透明なNavbar -->
     <nav
       class="dark:bg-dark/50 fixed top-0 z-50 w-full translate-y-0 bg-white/50 backdrop-blur-sm transition-transform md:hidden md:-translate-y-full"
@@ -144,7 +208,7 @@ function handlePageClick(page: number) {
       class="bg-neutral-primary-soft border-default fixed top-0 left-0 z-40 h-full w-64 -translate-x-full border-e pt-14 transition-transform md:translate-x-0 md:pt-0"
       aria-label="Sidebar"
     >
-      <div class="h-full overflow-y-auto px-3 py-0">
+      <div class="flex h-full flex-col justify-between overflow-y-auto px-3 py-0">
         <!-- 現在のフォルダー -->
         <ul class="border-default m-0 space-y-2 border-b py-2 font-light">
           <li class="hidden md:block">
@@ -164,19 +228,60 @@ function handlePageClick(page: number) {
           </li>
           <li>
             <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
-              <input type="checkbox" v-model="favoriteOnly" @change="handleFavoriteOnlyChange" class="peer sr-only" />
+              <input type="checkbox" v-model="favoriteOnly" @change="handleQueryConditionChange" class="peer sr-only" />
               <div
                 class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
               ></div>
               <span class="text-heading ms-3 text-sm font-medium select-none">♥だけ表示</span>
             </label>
           </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input type="checkbox" v-model="sortByName" @change="handleQueryConditionChange" class="peer sr-only" />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">名前順で表示</span>
+            </label>
+          </li>
+          <li>
+            <label class="text-heading inline-flex cursor-pointer items-center px-2 py-1.5">
+              <input
+                type="checkbox"
+                v-model="sortAscending"
+                @change="handleQueryConditionChange"
+                class="peer sr-only"
+              />
+              <div
+                class="bg-neutral-quaternary peer-focus:ring-brand-soft dark:peer-focus:ring-brand-soft peer peer-checked:after:border-buffer peer-checked:bg-brand relative h-5 w-9 rounded-full peer-focus:ring-4 peer-focus:outline-none after:absolute after:inset-s-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+              <span class="text-heading ms-3 text-sm font-medium select-none">昇順で並べ替え</span>
+            </label>
+          </li>
         </ul>
 
         <!-- サブフォルダー -->
-        <ul class="m-0 space-y-2 py-2 font-light">
+        <ul class="border-default m-0 space-y-2 border-b py-2 font-light">
           <li v-for="folder in folders" :key="folder.id">
             <folder-menu-item :id="folder.id" :name="folder.name" />
+          </li>
+        </ul>
+
+        <!-- ログアウト -->
+        <ul class="m-0 mt-auto space-y-2 py-2 font-light">
+          <li>
+            <div class="folder-menu-item">
+              <button
+                type="button"
+                @click="handleLogout"
+                class="text-heading rounded-base hover:bg-neutral-tertiary hover:text-fg-brand group flex w-full items-center justify-center px-2 py-1.5 text-sm"
+              >
+                <span class="text-heading ms-1 min-w-0 truncate text-sm font-medium" :title="username">{{
+                  username
+                }}</span>
+                <span class="text-heading truncate text-sm">のログアウト</span>
+              </button>
+            </div>
           </li>
         </ul>
       </div>

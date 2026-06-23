@@ -8,4 +8,7 @@ router.register('images', views.ImageViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('session', views.session),
+    path('login', views.login),
+    path('logout', views.logout),
 ]

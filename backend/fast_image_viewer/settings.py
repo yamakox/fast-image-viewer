@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'fast_image_viewer.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': APPDATA_FOLDER_PATH / 'db.sqlite3',
+        'NAME': APPDATA_FOLDER_PATH / 'dataset.sqlite3',
     }
 }
 
@@ -105,6 +105,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Authの設定(django.contrib.auth)
+LOGIN_REDIRECT_URL = 'http://localhost:5173/'
+LOGIN_URL = None
+LOGOUT_REDIRECT_URL = None
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -135,6 +139,22 @@ CORS_ALLOW_CREDENTIALS = True
 # アクセスを許可したいURL（アクセス元）を追加
 CORS_ALLOWED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 
+# フロントエンドからのCSRF保護付きPOSTを許可する
+CSRF_TRUSTED_ORIGINS = env.CORS_ALLOWED_ORIGINS
+
+# Session Engineの設定
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Djangoのデフォルト値はデータベース
+
+# セッションCookieの有効期限 (https://docs.djangoproject.com/en/6.0/ref/settings/#sessions)
+
+# 1年に設定する場合:
+# SESSION_COOKIE_AGE = 60 * 60 * 24 * 365  # 1年
+# CSRF_COOKIE_AGE = SESSION_COOKIE_AGE
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# ブラウザを閉じたタイミングで期限切れにする場合:
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # プリフライト(事前リクエスト)の設定 (デフォルトは86400秒==1日)
 # 30分だけ許可
 # CORS_PREFLIGHT_MAX_AGE = 60 * 30
@@ -157,5 +177,8 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
     ],
 }

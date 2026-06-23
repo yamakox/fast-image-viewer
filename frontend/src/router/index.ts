@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainPage from '../pages/MainPage.vue'
+import LoginPage from '../pages/LoginPage.vue'
 
 const router = createRouter({
   // NOTE: BASE_URLの値はvite.config.tsの`base`の値に依存する。
@@ -10,7 +11,11 @@ const router = createRouter({
       name: 'Main',
       component: MainPage,
     },
+    {
+      path: '/login',
+      name: 'Login',
+      component: LoginPage,
+    },
   ],
 })
-
 export default router

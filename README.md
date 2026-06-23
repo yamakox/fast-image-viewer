@@ -70,6 +70,16 @@ docker compose down --volumes --rmi all
 docker volume rm fast-image-viewer_appdata
 ```
 
+### ユーザーの作成
+
+まず、管理者ユーザーを以下のコマンドで作成してください。
+
+```bash
+docker compose run -i --rm app uv run manage.py createsuperuser
+```
+
+`http://{HOST}:{PORT_API}/admin`で管理画面を開き、管理者ユーザーでログインして、ユーザーを作成してください。
+
 ## 各フォルダーの説明
 
 詳細はそれぞれのREADME.mdを参照してください。

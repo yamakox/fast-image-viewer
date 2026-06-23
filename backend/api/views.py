@@ -4,13 +4,18 @@
 #     return JsonResponse({'value': 'Hello from Django!'})
 
 # from django.db.models.query import QuerySet
+from django.contrib.auth import authenticate, get_user_model, login as auth_login, logout as auth_logout
 from django.http import HttpResponse, JsonResponse
-from rest_framework import viewsets, pagination  # , renderers
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db.models import DateTimeField, OuterRef, Subquery, Value
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from rest_framework import viewsets, pagination, status  # , renderers
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import action
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
+from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
+from rest_framework.authentication import SessionAuthentication
 from . import models
 from . import serializers
 from . import renderers as image_renderers
@@ -21,27 +26,91 @@ from pathlib import Path
 
 root_path = Path(env.FIV_DATASET_FOLDER_PATH).resolve()
 appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
+User = get_user_model()
 
 
 def _make_400_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
-        status=HTTP_400_BAD_REQUEST,
+        status=status.HTTP_400_BAD_REQUEST,
     )
 
 
 def _make_404_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
-        status=HTTP_404_NOT_FOUND,
+        status=status.HTTP_404_NOT_FOUND,
     )
 
 
 def _make_500_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
-        status=HTTP_500_INTERNAL_SERVER_ERROR,
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
+
+
+def _get_session_user(request) -> User | None:
+    if request.user.is_authenticated:
+        return request.user
+    return None
+
+
+def _annotate_favorite(queryset, user: User | None):
+    if user:
+        favorite_subquery = models.Favorite.objects.filter(
+            image=OuterRef('pk'),
+            user=user,
+        ).values('timestamp')[:1]
+        return queryset.annotate(
+            favorite=Subquery(favorite_subquery, output_field=DateTimeField()),
+        )
+    return queryset.annotate(
+        favorite=Value(None, output_field=DateTimeField()),
+    )
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def session(request):
+    user = _get_session_user(request)
+    if not user:
+        return Response(
+            {'detail': '認証されていません。'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    return Response({'id': user.id, 'username': user.username})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def login(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    if not username or not password:
+        return Response(
+            {'detail': 'ユーザー名とパスワードが必要です。'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return Response(
+            {'detail': 'ログインに失敗しました。'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    auth_login(request, user)
+    return Response({'id': user.id, 'username': user.username})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([SessionAuthentication])
+def logout(request):
+    auth_logout(request)
+    return Response({'detail': 'ログアウトしました。'})
 
 
 class FolderViewSet(viewsets.ModelViewSet):
@@ -50,6 +119,7 @@ class FolderViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'head', 'options']
     queryset = models.Folder.objects.all()
     serializer_class = serializers.FolderSerializer
+    permission_classes = [IsAuthenticated]
     filterset_fields = ['parent']
     ordering_fields = [
         'name',
@@ -96,14 +166,21 @@ class ImageViewSet(viewsets.ModelViewSet):
     filterset_fields = ['parent']
     ordering_fields = ['name', 'parent', 'timestamp', 'favorite']
     ordering = ['-timestamp']
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['user'] = self.request.user
+        return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = self.request.user
+        queryset = _annotate_favorite(queryset, user)
         if self.request.query_params.get('rootonly'):
             queryset = queryset.filter(parent__isnull=True)
         if self.request.query_params.get('favoriteonly'):
-            queryset = queryset.filter(favorite__isnull=False)
+            queryset = queryset.filter(favorites__user=user).distinct()
         return queryset
 
     def get_serializer_class(self):
@@ -121,16 +198,23 @@ class ImageViewSet(viewsets.ModelViewSet):
         image = self.__get_image_record(pk)
         if image is None:
             return _make_404_response(detail='Image data not found.')
-        serializer = serializers.ImageSerializer(image, request.data, partial=True)
-        if not serializer.is_valid():
-            raise ValidationError(serializer.errors)
-        serializer.save()
-        return Response(
-            {
-                'id': image.id,
-                'favorite': image.favorite,
-            }
+        if 'favorite' not in request.data:
+            raise ValidationError({'favorite': 'This field is required.'})
+
+        favorite_value = request.data.get('favorite')
+        if favorite_value is None:
+            models.Favorite.objects.filter(user=request.user, image=image).delete()
+            return Response({'id': image.id, 'favorite': None})
+
+        timestamp = parse_datetime(favorite_value) if isinstance(favorite_value, str) else favorite_value
+        if timestamp is None:
+            timestamp = timezone.now()
+        favorite, _created = models.Favorite.objects.update_or_create(
+            user=request.user,
+            image=image,
+            defaults={'timestamp': timestamp},
         )
+        return Response({'id': image.id, 'favorite': favorite.timestamp})
 
     @action(methods=['get'], detail=True, renderer_classes=[image_renderers.JPEGRenderer])
     def image(self, request, pk=None):
@@ -148,7 +232,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         except Exception as excep:
             return JsonResponse(
                 {'id': pk, 'error': str(excep)},
-                status=HTTP_500_INTERNAL_SERVER_ERROR,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         # NOTE: Response(bindata, ...)ではブラウザに画像を送信できなかった(原因不明)

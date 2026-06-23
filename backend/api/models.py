@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -24,7 +25,25 @@ class Image(models.Model):
     )
     hash = models.CharField(max_length=16)
     timestamp = models.DateTimeField()
-    favorite = models.DateTimeField(
-        blank=False,
-        null=True,
+
+
+class Favorite(models.Model):
+    timestamp = models.DateTimeField()
+    image = models.ForeignKey(
+        Image,
+        on_delete=models.CASCADE,
+        related_name='favorites',
     )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'image'],
+                name='unique_user_image_favorite',
+            ),
+        ]
