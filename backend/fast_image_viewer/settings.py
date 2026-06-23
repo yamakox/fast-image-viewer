@@ -138,6 +138,9 @@ CORS_ALLOWED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 # フロントエンドからのCSRF保護付きPOSTを許可する
 CSRF_TRUSTED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 
+# Session Engineの設定
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Djangoのデフォルト値はデータベース
+
 # セッションCookieの有効期限 (https://docs.djangoproject.com/en/6.0/ref/settings/#sessions)
 
 # 1年に設定する場合:

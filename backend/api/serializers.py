@@ -21,8 +21,6 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'parent', 'hash', 'timestamp', 'favorite']
 
     def get_favorite(self, obj: models.Image):
-        if hasattr(obj, 'favorite'):
-            return obj.favorite
         user = self.context.get('user')
         if not user:
             return None

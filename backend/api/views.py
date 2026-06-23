@@ -9,19 +9,12 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import DateTimeField, OuterRef, Subquery, Value
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from rest_framework import viewsets, pagination  # , renderers
+from rest_framework import viewsets, pagination, status  # , renderers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.status import (
-    HTTP_201_CREATED,
-    HTTP_400_BAD_REQUEST,
-    HTTP_401_UNAUTHORIZED,
-    HTTP_404_NOT_FOUND,
-    HTTP_500_INTERNAL_SERVER_ERROR,
-)
 from . import models
 from . import serializers
 from . import renderers as image_renderers
@@ -37,21 +30,21 @@ appdata_path = Path(env.FIV_APPDATA_FOLDER_PATH).resolve()
 def _make_400_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
-        status=HTTP_400_BAD_REQUEST,
+        status=status.HTTP_400_BAD_REQUEST,
     )
 
 
 def _make_404_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
-        status=HTTP_404_NOT_FOUND,
+        status=status.HTTP_404_NOT_FOUND,
     )
 
 
 def _make_500_response(**kwargs) -> JsonResponse:
     return JsonResponse(
         dict(**kwargs),
-        status=HTTP_500_INTERNAL_SERVER_ERROR,
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
 
 
@@ -91,7 +84,7 @@ def session(request):
     if not user:
         return Response(
             {'detail': '認証されていません。'},
-            status=HTTP_401_UNAUTHORIZED,
+            status=status.HTTP_401_UNAUTHORIZED,
         )
     return Response({'id': user.id, 'username': user.username})
 
@@ -105,19 +98,19 @@ def login(request):
     if not username or not password:
         return Response(
             {'detail': 'ユーザー名とパスワードが必要です。'},
-            status=HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST,
         )
     try:
         user = models.User.objects.get(username=username)
     except models.User.DoesNotExist:
         return Response(
             {'detail': 'ログインに失敗しました。'},
-            status=HTTP_401_UNAUTHORIZED,
+            status=status.HTTP_401_UNAUTHORIZED,
         )
     if user.password != _hash_password(password):
         return Response(
             {'detail': 'ログインに失敗しました。'},
-            status=HTTP_401_UNAUTHORIZED,
+            status=status.HTTP_401_UNAUTHORIZED,
         )
     request.session['user_id'] = user.id
     return Response({'id': user.id, 'username': user.username})
@@ -140,12 +133,12 @@ def register(request):
     if not username or not password:
         return Response(
             {'detail': 'ユーザー名とパスワードが必要です。'},
-            status=HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST,
         )
     if models.User.objects.filter(username=username).exists():
         return Response(
             {'detail': 'このユーザー名は既に使用されています。'},
-            status=HTTP_400_BAD_REQUEST,
+            status=status.HTTP_400_BAD_REQUEST,
         )
     user = models.User.objects.create(
         username=username,
@@ -153,7 +146,7 @@ def register(request):
     )
     return Response(
         {'id': user.id, 'username': user.username},
-        status=HTTP_201_CREATED,
+        status=status.HTTP_201_CREATED,
     )
 
 
@@ -245,7 +238,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         if not user:
             return Response(
                 {'detail': '認証されていません。'},
-                status=HTTP_401_UNAUTHORIZED,
+                status=status.HTTP_401_UNAUTHORIZED,
             )
         image = self.__get_image_record(pk)
         if image is None:
@@ -284,7 +277,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         except Exception as excep:
             return JsonResponse(
                 {'id': pk, 'error': str(excep)},
-                status=HTTP_500_INTERNAL_SERVER_ERROR,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         # NOTE: Response(bindata, ...)ではブラウザに画像を送信できなかった(原因不明)
