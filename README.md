@@ -1,8 +1,31 @@
 # fast-image-viewer
 
-サーバ内の画像データフォルダを閲覧するWebアプリケーションです。Dockerで動きます。
+サーバ内の画像データフォルダを閲覧するWebアプリケーションです。以下の要素技術の練習用に作りました。
+
+- バックエンド
+  - [Django](https://www.djangoproject.com/)
+  - [Django REST framework](https://www.django-rest-framework.org/)
+  - [h5py](https://www.h5py.org/)
+  - sqlite
+- フロントエンド
+  - [Vite](https://vite.dev/)
+  - [Vue](https://vuejs.org/)
+  - [Tailwind CSS](https://tailwindcss.com/) + [Flowbite](https://flowbite.com/)
+- Docker
 
 ![v0.1.1のスクリーンショット](./screenshot_v011.png)
+
+## 目次
+
+- [fast-image-viewer](#fast-image-viewer)
+  - [目次](#目次)
+  - [使い方](#使い方)
+    - [環境変数の準備とコンテナイメージのビルド](#環境変数の準備とコンテナイメージのビルド)
+    - [画像データのスキャン](#画像データのスキャン)
+    - [アプリの起動](#アプリの起動)
+    - [アプリの停止](#アプリの停止)
+    - [データベース・サムネイル画像ファイルの削除](#データベースサムネイル画像ファイルの削除)
+  - [ライセンス](#ライセンス)
 
 ## 使い方
 
@@ -52,6 +75,8 @@ docker compose run -i --rm app uv run manage.py scan_dataset
 docker compose up -d
 ```
 
+アプリ起動後、ブラウザで`http://{HOST}:{PORT_WEB}/`を開きます。
+
 ### アプリの停止
 
 ```bash
@@ -72,10 +97,5 @@ docker compose down --volumes --rmi all
 docker volume rm fast-image-viewer_appdata
 ```
 
-## 各フォルダーの説明
+## ライセンス
 
-詳細はそれぞれのREADME.mdを参照してください。
-
-- `backend`の[README.md](./backend/README.md)
-- `frontend`の[README.md](./frontend/README.md)
-- `nginx`の[README.md](./nginx/README.md)
