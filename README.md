@@ -13,6 +13,16 @@
   - [Tailwind CSS](https://tailwindcss.com/) + [Flowbite](https://flowbite.com/)
 - Docker
 
+以下は、[Cursor](https://cursor.com/)のAI coding agentが計画立案・仕様作成・タスク策定・実装・動作確認(curl)を実施しました。
+
+- バックエンド2
+  - [FastAPI](https://fastapi.tiangolo.com/ja/)
+  - [SQLAlchemy](https://www.sqlalchemy.org/)
+  - [Alembic](https://alembic.sqlalchemy.org/)
+  - [Pydantic](https://docs.pydantic.dev/)
+  - [h5py](https://www.h5py.org/)
+  - sqlite
+
 ![v0.1.1のスクリーンショット](./screenshot_v011.png)
 
 ## 目次
@@ -40,6 +50,7 @@
 |PORT_WEB|Webアプリを公開するポート番号|
 |PORT_API|WebアプリのAPIを公開するポート番号|
 |DATASET_PATH|画像データを格納しているフォルダーのフルパス名|
+|BACKEND_TYPE|バックエンド実装の切替。`app`（Django / `app.Dockerfile`）または`app2`（FastAPI / `app2.Dockerfile`）。省略時は`app`|
 
 `http://myserver.local:12345/`でWebアプリを公開する場合、以下のようになります。
 
@@ -49,12 +60,21 @@ HOST=myserver.local
 PORT_WEB=12345
 PORT_API=12346
 DATASET_PATH=/path/to/dataset
+BACKEND_TYPE=app2
 ```
 
 以下のコマンドを実行して、コンテナイメージをビルドします。
 `HOST`や`PORT_API`はコンテナイメージの中に格納されるため、これらの環境変数を変更したときはビルドをやり直します。
+`BACKEND_TYPE`を切り替えた場合もイメージが変わるため、ビルドし直してください。
 
 ```bash
+docker compose build
+```
+
+`.env`の内容を大きく変えたとき（特に`BACKEND_TYPE`の切替）は、古いイメージ・ボリュームを消してから作り直すと安全です。
+
+```bash
+docker compose down --volumes --rmi all
 docker compose build
 ```
 
@@ -62,11 +82,22 @@ docker compose build
 
 すでにWebアプリケーションが起動している場合は、事前に[停止](#アプリの停止)しておいてください。
 
-`docker-compose.yml`ファイルのあるフォルダーで以下のコマンドを実行してください。
+`docker-compose.yml`ファイルのあるフォルダーで、`.env`の`BACKEND_TYPE`に応じて以下を実行してください。
+
+`BACKEND_TYPE=app`（Django）の場合:
 
 ```bash
 docker compose run -i --rm app uv run manage.py migrate
 docker compose run -i --rm app uv run manage.py scan_dataset
+```
+
+`BACKEND_TYPE=app2`（FastAPI）の場合:
+
+```bash
+# 新規 DB
+docker compose run -i --rm app alembic upgrade head
+# 既存 Django DB を流用する場合は代わりに: docker compose run -i --rm app alembic stamp head
+docker compose run -i --rm app scan_dataset
 ```
 
 ### アプリの起動
