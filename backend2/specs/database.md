@@ -61,6 +61,7 @@ erDiagram
 - `__tablename__` を `"api_folder"` / `"api_image"` に明示する
 - `Image.hash` は Python 予約語回避のため属性名 `hash_` + `mapped_column("hash", ...)` とする（JSON レスポンスのキーは `hash`）
 - FK の `ondelete="CASCADE"` を SQLAlchemy / Alembic 双方で再現する
+- SQLite では `INTEGER PRIMARY KEY` のみ autoincrement するため、PK / FK は `BigInteger().with_variant(Integer, "sqlite")`（Alembic 初期リビジョンは `Integer`）とする
 
 ## マイグレーション（Alembic）
 
