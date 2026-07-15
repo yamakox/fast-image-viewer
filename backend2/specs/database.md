@@ -4,9 +4,28 @@ SQLAlchemy 2.0 で Django 既存スキーマと互換のテーブルを定義す
 
 ## ER 関係
 
-```text
-Folder 1──* Folder  (children via parent)
-Folder 1──* Image   (images via parent)
+```mermaid
+erDiagram
+    direction TB
+
+    Folder ||--o{ Folder : "children via parent"
+    Folder ||--o{ Image : "images via parent"
+
+    Folder {
+        bigint id PK
+        text name
+        text pathname
+        bigint parent_id FK
+    }
+
+    Image {
+        bigint id PK
+        text name
+        bigint parent_id FK
+        varchar hash
+        datetime timestamp
+        datetime favorite
+    }
 ```
 
 ## テーブル定義
