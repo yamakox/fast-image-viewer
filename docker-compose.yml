@@ -1,15 +1,16 @@
 services:
   app:
-    image: fast-image-viewer-app
+    image: fast-image-viewer-${BACKEND_TYPE:-app}
     build:
       context: .
-      dockerfile: app.Dockerfile
+      dockerfile: ${BACKEND_TYPE:-app}.Dockerfile
     restart: always
     environment:
       DEBUG: "False"
       HOST: "0.0.0.0"
       PORT: "8000"
       WORKERS: "16"
+      # Django (app) のみ利用。FastAPI (app2) では無視される
       ALLOWED_HOSTS: "localhost;127.0.0.1;${HOST:?The environment variable HOST is not set}"
       STATIC_ROOT: "/usr/share/nginx/html/static/"
       PAGINATION_SIZE: "100"

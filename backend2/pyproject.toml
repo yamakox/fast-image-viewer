@@ -1,0 +1,54 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[project]
+name = "fast-image-viewer"
+description = "サーバ内に蓄積した画像を素早く探索する画像表示Webアプリ"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.13"
+authors = [{ name = "yamakox" }]
+dynamic = ["version"]
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn>=0.48.0",
+  "sqlalchemy>=2.0.0",
+  "alembic>=1.14.0",
+  "pydantic>=2.0.0",
+  "python-dotenv>=1.2.2",
+  "python-dateutil>=2.9.0.post0",
+  "h5py>=3.16.0",
+  "imagehash>=4.3.2",
+  "numpy>=2.4.6",
+  "pillow>=12.2.0",
+]
+
+[project.scripts]
+scan_dataset = "cli.scan_dataset:main"
+
+[project.urls]
+Homepage = "https://github.com/yamakox/fast-image-viewer"
+
+[dependency-groups]
+dev = ["debugpy>=1.8.20", "ruff>=0.15.15"]
+
+[tool.poetry]
+packages = [
+  { include = "app" },
+  { include = "cli" },
+  { include = "env.py" },
+  { include = "log.py" },
+]
+version = "0.0.0"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+
+[tool.uv]
+package = true

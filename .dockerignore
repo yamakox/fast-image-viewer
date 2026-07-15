@@ -1,0 +1,28 @@
+# 共通
+.git
+.github
+.vscode
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.ruff_cache
+**/.mypy_cache
+**/.pytest_cache
+**/.env
+**/.env.*
+!**/.env.example
+**/storage
+**/dist
+**/build
+**/*.egg-info
+
+# フロント（app / app2 ビルド時に不要）
+frontend/node_modules
+frontend/dist
+
+# 仕様・タスク・ローカル開発用（イメージに不要）
+backend2/specs
+backend2/tasks
+backend2/AGENTS.md
+backend2/test.http
+**/screenshot*.png

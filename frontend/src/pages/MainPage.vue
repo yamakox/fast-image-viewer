@@ -85,7 +85,7 @@ async function loadPageData() {
 
   // サブフォルダーの取得
   const folderParams: PageQuery = getQueryFromRouteQuery(route.query)
-  folderParams.ordering = undefined
+  delete folderParams.ordering
   folders.value = ((await getData('/api/v1/folders', folderParams)) as FolderListItem[]) ?? []
 
   // サムネイルの取得
